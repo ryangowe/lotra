@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 import { ensureDaemon } from "./src/daemon.ts";
 import { runCli } from "./src/cli.ts";
 
