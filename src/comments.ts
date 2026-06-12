@@ -1,20 +1,7 @@
-import { unified } from "unified";
-import remarkParse from "remark-parse";
-import remarkStringify from "remark-stringify";
 import type { Root, RootContent, Blockquote } from "mdast";
 import type { Comment, CommentStatus } from "./types.ts";
-import {
-  remarkComment,
-  isCommentNode,
-  serializeCommentNode,
-} from "./remark-comment.ts";
-
-const parser = unified().use(remarkParse).use(remarkComment);
-
-const stringifier = unified().use(remarkStringify, {
-  bullet: "-",
-  rule: "-",
-});
+import { isCommentNode, serializeCommentNode } from "./remark-comment.ts";
+import { parser, stringifier } from "./parser.ts";
 
 function parse(markdown: string): Root {
   return parser.runSync(parser.parse(markdown));

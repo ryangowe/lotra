@@ -1,17 +1,10 @@
 import { test, expect, describe } from "bun:test";
-import { unified } from "unified";
-import remarkParse from "remark-parse";
 import type { Root, Blockquote } from "mdast";
-import {
-  remarkComment,
-  isCommentNode,
-  buildCalloutHeader,
-} from "./remark-comment.ts";
-
-const processor = unified().use(remarkParse).use(remarkComment);
+import { isCommentNode, buildCalloutHeader } from "./remark-comment.ts";
+import { parser } from "./parser.ts";
 
 function parse(md: string): Root {
-  return processor.runSync(processor.parse(md));
+  return parser.runSync(parser.parse(md));
 }
 
 function firstBlockquote(tree: Root): Blockquote {
