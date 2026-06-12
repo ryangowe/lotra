@@ -2,6 +2,7 @@ import { test, expect, describe } from "bun:test";
 import {
   extractComments,
   insertComment,
+  editCommentBody,
   updateCommentStatus,
   removeComment,
   formatCommentsForStdout,
@@ -223,6 +224,35 @@ describe("updateCommentStatus", () => {
     const comments = extractComments(result);
     expect(comments[0]!.status).toBe("requested");
     expect(comments[1]!.status).toBe("note");
+  });
+});
+
+describe("editCommentBody", () => {
+  test("replaces comment body", () => {
+    const result = editCommentBody(DOC_WITH_COMMENTS, "c1", "New body text.");
+    const comments = extractComments(result);
+    expect(comments[0]!.id).toBe("c1");
+    expect(comments[0]!.body).toContain("New body text.");
+    expect(comments[0]!.body).not.toContain("wrong");
+  });
+
+  test("preserves other comments", () => {
+    const result = editCommentBody(DOC_WITH_COMMENTS, "c1", "Changed.");
+    const comments = extractComments(result);
+    expect(comments).toHaveLength(2);
+    expect(comments[1]!.body).toContain("hint");
+  });
+
+  test("preserves comment status", () => {
+    const result = editCommentBody(DOC_WITH_COMMENTS, "c1", "Changed.");
+    const comments = extractComments(result);
+    expect(comments[0]!.status).toBe("requested");
+  });
+
+  test("no-op for nonexistent id", () => {
+    const result = editCommentBody(DOC_WITH_COMMENTS, "nope", "Changed.");
+    const comments = extractComments(result);
+    expect(comments[0]!.body).toContain("wrong");
   });
 });
 

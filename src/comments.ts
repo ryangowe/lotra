@@ -12,6 +12,11 @@ function stringifyChildren(node: Blockquote): string {
   return stringifier.stringify(bodyTree).trim();
 }
 
+function parseBodyChildren(body: string): Blockquote["children"] {
+  if (!body) return [];
+  return parse(body).children as Blockquote["children"];
+}
+
 function stringify(tree: Root): string {
   const out: string[] = [];
   for (const node of tree.children) {
@@ -105,13 +110,10 @@ export function insertComment(
     throw new Error(`Block index ${blockIndex} out of range`);
   }
 
-  const bodyTree = body
-    ? parser.runSync(parser.parse(body))
-    : { type: "root" as const, children: [] };
   const calloutNode: Blockquote = {
     type: "blockquote",
     data: { commentId: id, commentStatus: status },
-    children: bodyTree.children as Blockquote["children"],
+    children: parseBodyChildren(body),
   };
 
   tree.children.splice(insertAfter + 1, 0, calloutNode);
@@ -130,6 +132,23 @@ export function updateCommentStatus(
   for (const node of tree.children) {
     if (isCommentNode(node) && idSet.has(node.data.commentId)) {
       node.data.commentStatus = newStatus;
+    }
+  }
+
+  return stringify(tree);
+}
+
+export function editCommentBody(
+  markdown: string,
+  id: string,
+  newBody: string,
+): string {
+  const tree = parse(markdown);
+
+  for (const node of tree.children) {
+    if (isCommentNode(node) && node.data.commentId === id) {
+      node.children = parseBodyChildren(newBody);
+      break;
     }
   }
 
