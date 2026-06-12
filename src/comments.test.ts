@@ -181,19 +181,17 @@ describe("insertComment", () => {
     ).toThrow("out of range");
   });
 
-  test("appends after existing comments on same block", () => {
-    let result = insertComment(
+  test("throws when block already has a comment", () => {
+    const result = insertComment(
       DOC_NO_COMMENTS,
       1,
       "c1",
       "requested",
       "First comment.",
     );
-    result = insertComment(result, 1, "c2", "requested", "Second comment.");
-    const comments = extractComments(result);
-    expect(comments).toHaveLength(2);
-    expect(comments[0]!.id).toBe("c1");
-    expect(comments[1]!.id).toBe("c2");
+    expect(() =>
+      insertComment(result, 1, "c2", "requested", "Second comment."),
+    ).toThrow("already has a comment");
   });
 });
 

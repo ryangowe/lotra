@@ -175,10 +175,18 @@ export function createRoutes(ctx: ServerContext): RouteTable {
 
         const id = ctx.genId();
         const md = await ctx.readMd(absPath);
-        await ctx.writeMd(
-          absPath,
-          insertComment(md, blockIndex, id, status, body),
-        );
+        let updated: string;
+        try {
+          updated = insertComment(md, blockIndex, id, status, body);
+        } catch (e) {
+          if (e instanceof Error && e.message.includes("already has a comment"))
+            return Response.json(
+              { error: "block already has a comment" },
+              { status: 409 },
+            );
+          throw e;
+        }
+        await ctx.writeMd(absPath, updated);
         return Response.json({ ok: true, id });
       },
     },

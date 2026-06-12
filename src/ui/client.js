@@ -17,9 +17,7 @@ function showForm(afterEl, opts) {
   const form = document.createElement("div");
   form.className = "comment-form";
   form.innerHTML =
-    '<textarea placeholder="输入评论...">' +
-    (opts.initial || "") +
-    "</textarea>" +
+    '<textarea placeholder="输入评论..."></textarea>' +
     '<div class="form-actions">' +
     '<button class="btn-save">' +
     (opts.saveLabel || "添加") +
@@ -29,10 +27,14 @@ function showForm(afterEl, opts) {
 
   afterEl.insertAdjacentElement("afterend", form);
   const ta = form.querySelector("textarea");
+  ta.value = opts.initial || "";
   ta.focus();
   ta.setSelectionRange(ta.value.length, ta.value.length);
 
-  form.querySelector(".btn-cancel").onclick = () => form.remove();
+  form.querySelector(".btn-cancel").onclick = () => {
+    if (opts.onCancel) opts.onCancel();
+    form.remove();
+  };
   form.querySelector(".btn-save").onclick = async () => {
     try {
       await opts.onSave(ta.value);
@@ -45,9 +47,27 @@ function showForm(afterEl, opts) {
   };
 }
 
+function openEditForm(commentEl) {
+  const id = commentEl.dataset.id;
+  const bodyEl = commentEl.querySelector(".comment-body");
+  const current = bodyEl.dataset.body;
+  bodyEl.style.display = "none";
+  showForm(commentEl.querySelector(".comment-header"), {
+    initial: current,
+    saveLabel: "保存",
+    onSave: (body) => api("/api/comment/edit", { file: FILE, id, body }),
+    onCancel: () => (bodyEl.style.display = ""),
+  });
+}
+
 document.querySelectorAll(".btn-add-comment").forEach((btn) => {
   btn.addEventListener("click", () => {
     const block = btn.closest(".block");
+    const existing = block.nextElementSibling;
+    if (existing?.classList.contains("comment")) {
+      openEditForm(existing);
+      return;
+    }
     const blockIndex = parseInt(btn.dataset.blockIndex);
     showForm(block, {
       onSave: (body) =>
@@ -57,18 +77,7 @@ document.querySelectorAll(".btn-add-comment").forEach((btn) => {
 });
 
 document.querySelectorAll(".btn-edit").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const comment = btn.closest(".comment");
-    const id = btn.dataset.id;
-    const bodyEl = comment.querySelector(".comment-body");
-    const current = bodyEl.dataset.body;
-    bodyEl.style.display = "none";
-    showForm(comment.querySelector(".comment-header"), {
-      initial: current,
-      saveLabel: "保存",
-      onSave: (body) => api("/api/comment/edit", { file: FILE, id, body }),
-    });
-  });
+  btn.addEventListener("click", () => openEditForm(btn.closest(".comment")));
 });
 
 document.querySelectorAll(".btn-delete").forEach((btn) => {

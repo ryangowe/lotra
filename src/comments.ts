@@ -93,13 +93,11 @@ export function insertComment(
 
     if (count === blockIndex) {
       insertAfter = i;
-      while (insertAfter + 1 < tree.children.length) {
-        const next = tree.children[insertAfter + 1]!;
-        if (isCommentNode(next)) {
-          insertAfter++;
-        } else {
-          break;
-        }
+      if (
+        insertAfter + 1 < tree.children.length &&
+        isCommentNode(tree.children[insertAfter + 1]!)
+      ) {
+        throw new Error(`Block ${blockIndex} already has a comment`);
       }
       break;
     }
