@@ -43,11 +43,11 @@ lotra status
 
 ## Comment States
 
-| Status | Meaning |
-|---|---|
-| `requested` | Changes requested (included in relay/handoff output) |
-| `note` | Informational hint (agent must read the file directly) |
-| `resolved` | Addressed (folded in browser) |
+| Status      | Meaning                                                |
+| ----------- | ------------------------------------------------------ |
+| `requested` | Changes requested (included in relay/handoff output)   |
+| `note`      | Informational hint (agent must read the file directly) |
+| `resolved`  | Addressed (folded in browser)                          |
 
 ## Security
 
