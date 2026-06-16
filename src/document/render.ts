@@ -3,10 +3,10 @@ import { toHast } from "mdast-util-to-hast";
 import { toHtml } from "hast-util-to-html";
 import type { Root, RootContent } from "mdast";
 import { isCommentNode } from "./remark-comment.ts";
-import type { CommentStatus } from "./types.ts";
+import type { CommentStatus } from "../shared/types.ts";
 import { parser, stringifier } from "./parser.ts";
 
-const uiDir = resolve(import.meta.dir, "ui");
+const uiDir = resolve(import.meta.dir, "../ui");
 const pageTemplate = await Bun.file(resolve(uiDir, "page.html")).text();
 const styleSheet = await Bun.file(resolve(uiDir, "style.css")).text();
 const clientScript = await Bun.file(resolve(uiDir, "client.js")).text();

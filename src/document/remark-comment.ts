@@ -1,7 +1,7 @@
 import type { Root, Blockquote, RootContent } from "mdast";
 import type { Plugin } from "unified";
 import { visit, SKIP } from "unist-util-visit";
-import { COMMENT_STATUSES, type CommentStatus } from "./types.ts";
+import { COMMENT_STATUSES, type CommentStatus } from "../shared/types.ts";
 
 declare module "mdast" {
   interface BlockquoteData {

@@ -1,5 +1,5 @@
 import { resolve } from "node:path";
-import { PORT_FILE } from "./constants.ts";
+import { PORT_FILE } from "../shared/constants.ts";
 
 export async function getDaemonUrl(): Promise<string | null> {
   const file = Bun.file(PORT_FILE);

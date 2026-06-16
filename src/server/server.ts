@@ -5,7 +5,7 @@ import {
   PORT_FILE,
   DEFAULT_PORT,
   IDLE_TIMEOUT_MS,
-} from "./constants.ts";
+} from "../shared/constants.ts";
 import { createRoutes, type FileState } from "./routes.ts";
 
 export async function startServer(opts: { workingDir: string }) {

@@ -1,5 +1,5 @@
 import type { Root, RootContent, Blockquote } from "mdast";
-import type { Comment, CommentStatus } from "./types.ts";
+import type { Comment, CommentStatus } from "../shared/types.ts";
 import { isCommentNode, serializeCommentNode } from "./remark-comment.ts";
 import { parser, stringifier } from "./parser.ts";
 

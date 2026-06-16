@@ -1,5 +1,5 @@
 import { relative } from "node:path";
-import { COMMENT_STATUSES } from "./types.ts";
+import { COMMENT_STATUSES } from "../shared/types.ts";
 import {
   extractComments,
   insertComment,
@@ -7,9 +7,9 @@ import {
   updateCommentStatus,
   removeComment,
   formatCommentsForStdout,
-} from "./comments.ts";
-import { sanitize } from "./sanitize.ts";
-import { renderView } from "./render.ts";
+} from "../document/comments.ts";
+import { sanitize } from "../document/sanitize.ts";
+import { renderView } from "../document/render.ts";
 
 export interface ServerContext {
   cwd: string;
