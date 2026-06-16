@@ -1,0 +1,142 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:where([data-theme="dark"] *));
+
+@theme {
+  --color-bg: #faf9f5;
+  --color-paper: #ffffff;
+  --color-side: #efede3;
+  --color-ink: #23221f;
+  --color-muted: #74726a;
+  --color-faint: #9c9a90;
+  --color-line: #e6e3d9;
+  --color-soft: #eeebe1;
+  --color-hl: #f1efe6;
+  --color-code: #f4f2eb;
+
+  --color-accent: #d97757;
+  --color-accent-ink: #7c3d26;
+  --color-accent-soft: #f7e9e1;
+  --color-on-accent: #ffffff;
+
+  --color-note: #5e7c96;
+  --color-note-ink: #3a566d;
+  --color-note-soft: #e7edf2;
+
+  --color-done: #9c9a90;
+  --color-done-ink: #6e6c63;
+  --color-done-soft: #efede6;
+
+  --color-hi-req: #fcf4ef;
+  --color-hi-note: #f1f5f8;
+  --color-hi-done: #f7f6f2;
+
+  --font-sans: "Hanken Grotesk", system-ui, sans-serif;
+  --font-serif: "Source Serif 4", Georgia, serif;
+  --font-mono: "IBM Plex Mono", monospace;
+}
+
+[data-theme="dark"] {
+  --color-bg: #262624;
+  --color-paper: #2f2e2b;
+  --color-side: #1f1e1c;
+  --color-ink: #ece9e1;
+  --color-muted: #a7a49b;
+  --color-faint: #7e7c73;
+  --color-line: #3b3a36;
+  --color-soft: #34332f;
+  --color-hl: #302f2c;
+  --color-code: #211f1c;
+
+  --color-accent: #e08a6e;
+  --color-accent-ink: #f0c6b5;
+  --color-accent-soft: #3a2a23;
+  --color-on-accent: #2a1712;
+
+  --color-note: #84a6c2;
+  --color-note-ink: #abc8de;
+  --color-note-soft: #25333d;
+
+  --color-done: #86847c;
+  --color-done-ink: #aba89f;
+  --color-done-soft: #2c2b27;
+
+  --color-hi-req: #2e231f;
+  --color-hi-note: #212a30;
+  --color-hi-done: #2a2926;
+
+  color-scheme: dark;
+}
+
+@layer base {
+  body {
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::-webkit-scrollbar {
+    width: 11px;
+    height: 11px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--color-faint) 40%, transparent);
+    border: 3px solid transparent;
+    border-radius: 8px;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--color-faint) 60%, transparent);
+    background-clip: padding-box;
+  }
+}
+
+/* Brand-tuned prose for rendered markdown (reading blocks + comment bodies).
+   Prose colors reference theme vars, so they flip automatically in dark mode. */
+.md {
+  --tw-prose-body: var(--color-ink);
+  --tw-prose-headings: var(--color-ink);
+  --tw-prose-bold: var(--color-ink);
+  --tw-prose-links: var(--color-accent-ink);
+  --tw-prose-quotes: var(--color-muted);
+  --tw-prose-quote-borders: var(--color-accent);
+  --tw-prose-bullets: var(--color-faint);
+  --tw-prose-counters: var(--color-faint);
+  --tw-prose-hr: var(--color-soft);
+  --tw-prose-code: var(--color-accent-ink);
+  --tw-prose-pre-bg: var(--color-code);
+  --tw-prose-pre-code: var(--color-ink);
+  --tw-prose-th-borders: var(--color-line);
+  --tw-prose-td-borders: var(--color-soft);
+}
+.md :where(code):not(:where(pre *)) {
+  background: var(--color-accent-soft);
+  padding: 0.1em 0.35em;
+  border-radius: 5px;
+  font-weight: 500;
+}
+.md :where(code):not(:where(pre *))::before,
+.md :where(code):not(:where(pre *))::after {
+  content: "";
+}
+
+@keyframes lotra-up {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes lotra-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.7);
+  }
+}

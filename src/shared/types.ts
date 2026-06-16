@@ -17,6 +17,7 @@ export interface DocumentData {
 export interface BlockData {
   index: number;
   html: string;
+  heading: { depth: number; text: string } | null;
 }
 
 export interface CommentData {

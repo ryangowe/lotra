@@ -8,6 +8,7 @@ import {
 } from "../shared/constants.ts";
 import { createRoutes } from "./routes.ts";
 import { createStore } from "./store.ts";
+import page from "../ui/page.html";
 
 export async function startServer(opts: { workingDir: string }) {
   const cwd = opts.workingDir;
@@ -61,7 +62,12 @@ export async function startServer(opts: { workingDir: string }) {
 
   const serveConfig = {
     hostname: "127.0.0.1",
-    routes,
+    routes: {
+      "/view": page,
+      "/favicon.ico": new Response(null, { status: 204 }),
+      ...routes,
+    },
+    development: { hmr: false, console: false },
     fetch() {
       resetIdle();
       return new Response("Not found", { status: 404 });
@@ -97,5 +103,5 @@ export async function startServer(opts: { workingDir: string }) {
 }
 
 if (import.meta.main) {
-  await startServer({ workingDir: process.cwd() });
+  await startServer({ workingDir: process.env.LOTRA_CWD ?? process.cwd() });
 }

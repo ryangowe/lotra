@@ -9,7 +9,7 @@ import {
   formatCommentsForStdout,
 } from "../document/comments.ts";
 import { sanitize } from "../document/sanitize.ts";
-import { renderView, getDocumentData } from "../document/render.ts";
+import { getDocumentData } from "../document/render.ts";
 import type { DocStore } from "./store.ts";
 
 export interface ServerContext extends DocStore {
@@ -129,21 +129,6 @@ export function createRoutes(ctx: ServerContext): RouteTable {
           waiters: s.waiters.length,
         }));
         return Response.json({ files: status });
-      },
-    },
-
-    "/view": {
-      GET: async (req) => {
-        const absPath = fileParam(req, ctx);
-        if (!absPath) return new Response("Invalid file path", { status: 400 });
-        if (!(await ctx.fileExists(absPath)))
-          return new Response("File not found", { status: 404 });
-
-        const md = await ctx.load(absPath);
-        const html = renderView(relative(ctx.cwd, absPath), md);
-        return new Response(html, {
-          headers: { "Content-Type": "text/html; charset=utf-8" },
-        });
       },
     },
 
