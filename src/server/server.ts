@@ -6,11 +6,15 @@ import {
   DEFAULT_PORT,
   IDLE_TIMEOUT_MS,
 } from "../shared/constants.ts";
-import { createRoutes, type FileState } from "./routes.ts";
+import { createRoutes } from "./routes.ts";
+import { createStore } from "./store.ts";
 
 export async function startServer(opts: { workingDir: string }) {
   const cwd = opts.workingDir;
-  const files = new Map<string, FileState>();
+  const store = createStore({
+    readMd: (p: string) => Bun.file(p).text(),
+    writeMd: (p: string, c: string) => Bun.write(p, c).then(() => {}),
+  });
 
   let idleTimer: ReturnType<typeof setTimeout> | null = null;
   function resetIdle() {
@@ -37,20 +41,9 @@ export async function startServer(opts: { workingDir: string }) {
       if (relative(cwd, abs).startsWith("..")) return null;
       return abs;
     },
-    getFile(absPath: string) {
-      let f = files.get(absPath);
-      if (!f) {
-        f = { waiters: [] };
-        files.set(absPath, f);
-      }
-      return f;
-    },
-    peekFile: (absPath: string) => files.get(absPath),
-    allFiles: () => files.entries(),
+    ...store,
     genId: () => "c" + crypto.randomUUID().slice(0, 7),
     fileExists: (p: string) => Bun.file(p).exists(),
-    readMd: (p: string) => Bun.file(p).text(),
-    writeMd: (p: string, c: string) => Bun.write(p, c).then(() => {}),
   });
 
   const routes: Record<

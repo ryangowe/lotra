@@ -10,21 +10,13 @@ import {
 } from "../document/comments.ts";
 import { sanitize } from "../document/sanitize.ts";
 import { renderView } from "../document/render.ts";
+import type { DocStore } from "./store.ts";
 
-export interface ServerContext {
+export interface ServerContext extends DocStore {
   cwd: string;
   resolvePath(p: string): string | null;
-  getFile(p: string): FileState;
-  peekFile(p: string): FileState | undefined;
-  allFiles(): IterableIterator<[string, FileState]>;
   genId(): string;
   fileExists(p: string): Promise<boolean>;
-  readMd(p: string): Promise<string>;
-  writeMd(p: string, content: string): Promise<void>;
-}
-
-export interface FileState {
-  waiters: Array<(output: string) => void>;
 }
 
 type Handler = (req: Request) => Promise<Response>;
@@ -45,7 +37,7 @@ export function createRoutes(ctx: ServerContext): RouteTable {
           return Response.json({ error: "invalid file path" }, { status: 400 });
         if (!(await ctx.fileExists(absPath)))
           return Response.json({ error: "file not found" }, { status: 404 });
-        ctx.getFile(absPath);
+        await ctx.load(absPath);
         return Response.json({ ok: true, file: absPath });
       },
     },
@@ -70,8 +62,9 @@ export function createRoutes(ctx: ServerContext): RouteTable {
           return Response.json({ error: "invalid file path" }, { status: 400 });
         const file = ctx.getFile(absPath);
 
-        const md = await ctx.readMd(absPath);
+        const md = await ctx.load(absPath);
         const output = formatCommentsForStdout(extractComments(md));
+        await ctx.flush(absPath);
 
         const waiters = file.waiters.splice(0);
         for (const w of waiters) w(output);
@@ -86,7 +79,7 @@ export function createRoutes(ctx: ServerContext): RouteTable {
         if (!absPath)
           return Response.json({ error: "invalid file path" }, { status: 400 });
 
-        const md = await ctx.readMd(absPath);
+        const md = await ctx.load(absPath);
         const output = formatCommentsForStdout(extractComments(md));
         return new Response(output, {
           headers: { "Content-Type": "text/plain; charset=utf-8" },
@@ -107,8 +100,9 @@ export function createRoutes(ctx: ServerContext): RouteTable {
             { status: 400 },
           );
 
-        const md = await ctx.readMd(absPath);
-        await ctx.writeMd(absPath, updateCommentStatus(md, ids, "resolved"));
+        const md = await ctx.load(absPath);
+        ctx.setText(absPath, updateCommentStatus(md, ids, "resolved"));
+        await ctx.flush(absPath);
         return Response.json({ ok: true });
       },
     },
@@ -145,8 +139,7 @@ export function createRoutes(ctx: ServerContext): RouteTable {
         if (!(await ctx.fileExists(absPath)))
           return new Response("File not found", { status: 404 });
 
-        ctx.getFile(absPath);
-        const md = await ctx.readMd(absPath);
+        const md = await ctx.load(absPath);
         const html = renderView(relative(ctx.cwd, absPath), md);
         return new Response(html, {
           headers: { "Content-Type": "text/html; charset=utf-8" },
@@ -174,7 +167,7 @@ export function createRoutes(ctx: ServerContext): RouteTable {
           );
 
         const id = ctx.genId();
-        const md = await ctx.readMd(absPath);
+        const md = await ctx.load(absPath);
         let updated: string;
         try {
           updated = insertComment(md, blockIndex, id, status, body);
@@ -186,7 +179,7 @@ export function createRoutes(ctx: ServerContext): RouteTable {
             );
           throw e;
         }
-        await ctx.writeMd(absPath, updated);
+        ctx.setText(absPath, updated);
         return Response.json({ ok: true, id });
       },
     },
@@ -209,8 +202,8 @@ export function createRoutes(ctx: ServerContext): RouteTable {
             { status: 400 },
           );
 
-        const md = await ctx.readMd(absPath);
-        await ctx.writeMd(absPath, editCommentBody(md, id, body));
+        const md = await ctx.load(absPath);
+        ctx.setText(absPath, editCommentBody(md, id, body));
         return Response.json({ ok: true });
       },
     },
@@ -225,8 +218,8 @@ export function createRoutes(ctx: ServerContext): RouteTable {
         if (!absPath)
           return Response.json({ error: "invalid file path" }, { status: 400 });
 
-        const md = await ctx.readMd(absPath);
-        await ctx.writeMd(absPath, removeComment(md, id));
+        const md = await ctx.load(absPath);
+        ctx.setText(absPath, removeComment(md, id));
         return Response.json({ ok: true });
       },
     },
@@ -244,8 +237,8 @@ export function createRoutes(ctx: ServerContext): RouteTable {
         if (!(COMMENT_STATUSES as readonly string[]).includes(status))
           return Response.json({ error: "invalid status" }, { status: 400 });
 
-        const md = await ctx.readMd(absPath);
-        await ctx.writeMd(absPath, updateCommentStatus(md, [id], status));
+        const md = await ctx.load(absPath);
+        ctx.setText(absPath, updateCommentStatus(md, [id], status));
         return Response.json({ ok: true });
       },
     },
