@@ -1,4 +1,3 @@
-import { resolve, relative } from "node:path";
 import { unlinkSync } from "node:fs";
 import {
   PORT_DIR,
@@ -8,6 +7,7 @@ import {
 } from "../shared/constants.ts";
 import { createRoutes } from "./routes.ts";
 import { createStore } from "./store.ts";
+import { resolvePath } from "./paths.ts";
 import page from "../ui/page.html";
 
 export async function startServer(opts: { workingDir: string }) {
@@ -37,11 +37,7 @@ export async function startServer(opts: { workingDir: string }) {
 
   const raw = createRoutes({
     cwd,
-    resolvePath(filePath: string) {
-      const abs = resolve(cwd, filePath);
-      if (relative(cwd, abs).startsWith("..")) return null;
-      return abs;
-    },
+    resolvePath: (filePath: string) => resolvePath(cwd, filePath),
     ...store,
     genId: () => "c" + crypto.randomUUID().slice(0, 7),
     fileExists: (p: string) => Bun.file(p).exists(),

@@ -1,0 +1,3 @@
+# Golden test fixtures: their byte layout is the expected output of remark-stringify,
+# not prettier — reformatting them would break the round-trip assertions.
+test/fixtures/
