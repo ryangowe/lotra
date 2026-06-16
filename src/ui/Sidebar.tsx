@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import {
   ChevronRight,
-  MessageSquare,
   FileText,
   AlignLeft,
   Check,
@@ -11,6 +10,7 @@ import {
 import type { BlockData, CommentData } from "../shared/types.ts";
 import { snippet } from "./utils.ts";
 import { StatusDot } from "./StatusDot.tsx";
+import logo from "./favicon.svg";
 
 interface TocEntry {
   index: number;
@@ -135,9 +135,7 @@ export function Sidebar({
     <aside className="flex w-[clamp(206px,20vw,300px)] flex-none flex-col border-r border-line bg-side">
       <div className="px-5 pb-4 pt-[22px]">
         <div className="flex items-center gap-2">
-          <div className="grid size-6 place-items-center rounded-md bg-accent text-on-accent">
-            <MessageSquare size={14} />
-          </div>
+          <img src={logo} alt="" className="size-6" />
           <span className="font-semibold">lotra</span>
         </div>
         <div className="mt-1 text-xs text-muted">

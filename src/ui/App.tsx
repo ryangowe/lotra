@@ -22,6 +22,10 @@ export function App({ file }: { file: string }) {
     if (comments.error) toast.error(comments.error.message);
   }, [comments.error]);
 
+  useEffect(() => {
+    if (data?.title) document.title = data.title;
+  }, [data?.title]);
+
   const unresolvedCount = useMemo(
     () => data?.comments.filter((c) => c.status !== "resolved").length ?? 0,
     [data],
