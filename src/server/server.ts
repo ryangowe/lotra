@@ -63,7 +63,12 @@ export async function startServer(opts: { workingDir: string }) {
       "/favicon.ico": new Response(null, { status: 204 }),
       ...routes,
     },
-    development: { hmr: false, console: false },
+    // Production (default) bundles the UI once and caches it; NODE_ENV=development
+    // opts into hot-reloading for local development.
+    development:
+      process.env.NODE_ENV === "development"
+        ? { hmr: true, console: true }
+        : false,
     fetch() {
       resetIdle();
       return new Response("Not found", { status: 404 });

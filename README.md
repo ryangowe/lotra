@@ -51,14 +51,21 @@ lotra status
 
 ## Security
 
-- Server binds to `127.0.0.1` by default (localhost only)
-- `--host 0.0.0.0` required for network access
+- Server binds to `127.0.0.1` (localhost only)
 - File access restricted to the invoking directory
 
 ## Installation
 
+Requires [Bun](https://bun.sh).
+
 ```bash
-# Coming soon
+bun install -g lotra
+```
+
+Or run it without installing:
+
+```bash
+bunx lotra ./doc.md
 ```
 
 ## License

@@ -22,8 +22,7 @@ export async function ensureDaemon(): Promise<string> {
   const existing = await getDaemonUrl();
   if (existing) return existing;
 
-  // Run the daemon from the package root so Bun finds bunfig.toml (the
-  // tailwind plugin lives there); the file's working dir travels via env.
+  // Run from the package root so Bun's bundler finds bunfig.toml (the tailwind plugin).
   const entryPoint = resolve(import.meta.dir, "server.ts");
   const packageRoot = resolve(import.meta.dir, "../..");
   const proc = Bun.spawn(["bun", entryPoint], {
