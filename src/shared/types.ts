@@ -7,3 +7,22 @@ export interface Comment {
   body: string;
   paragraphText: string;
 }
+
+export interface DocumentData {
+  title: string;
+  blocks: BlockData[];
+  comments: CommentData[];
+}
+
+export interface BlockData {
+  index: number;
+  html: string;
+}
+
+export interface CommentData {
+  id: string;
+  blockIndex: number | null;
+  status: CommentStatus;
+  body: string;
+  bodyHtml: string;
+}

@@ -8,6 +8,7 @@
         "commander": "^15.0.0",
         "hast-util-to-html": "^9.0.5",
         "mdast-util-to-hast": "^13.2.1",
+        "mdast-util-to-string": "^4.0.0",
         "remark-gfm": "^4.0.1",
         "remark-parse": "^11.0.0",
         "remark-stringify": "^11.0.0",

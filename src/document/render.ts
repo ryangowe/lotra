@@ -1,9 +1,15 @@
 import { resolve } from "node:path";
 import { toHast } from "mdast-util-to-hast";
 import { toHtml } from "hast-util-to-html";
+import { toString } from "mdast-util-to-string";
 import type { Root, RootContent } from "mdast";
 import { isCommentNode } from "./remark-comment.ts";
-import type { CommentStatus } from "../shared/types.ts";
+import type {
+  CommentStatus,
+  DocumentData,
+  BlockData,
+  CommentData,
+} from "../shared/types.ts";
 import { parser, stringifier } from "./parser.ts";
 
 const uiDir = resolve(import.meta.dir, "../ui");
@@ -95,4 +101,43 @@ export function renderView(filePath: string, markdown: string): string {
     .replace("{{SCRIPT}}", clientScript)
     .replace("{{CONTENT}}", sections.join("\n"))
     .replace("{{SUBMIT_LABEL}}", "保存");
+}
+
+function documentTitle(tree: Root, fallback: string): string {
+  for (const node of tree.children) {
+    if (node.type === "heading" && node.depth === 1) {
+      const text = toString(node).trim();
+      if (text) return text;
+    }
+  }
+  return fallback;
+}
+
+export function getDocumentData(
+  filePath: string,
+  markdown: string,
+): DocumentData {
+  const tree = parser.runSync(parser.parse(markdown)) as Root;
+
+  const blocks: BlockData[] = [];
+  const comments: CommentData[] = [];
+  let index = 0;
+
+  for (const node of tree.children) {
+    if (isCommentNode(node)) {
+      const children = node.children as RootContent[];
+      comments.push({
+        id: node.data.commentId,
+        blockIndex: index === 0 ? null : index - 1, // preceding block, or null if none
+        status: node.data.commentStatus,
+        body: childrenToMarkdown(children),
+        bodyHtml: childrenToHtml(children),
+      });
+    } else {
+      blocks.push({ index, html: nodeToHtml(node) });
+      index++;
+    }
+  }
+
+  return { title: documentTitle(tree, filePath), blocks, comments };
 }
