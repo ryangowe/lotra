@@ -1,0 +1,14 @@
+{
+  "name": "lotra",
+  "owner": {
+    "name": "ryangowe"
+  },
+  "description": "lotra — human review for long agent output",
+  "plugins": [
+    {
+      "name": "lotra",
+      "source": "./plugin",
+      "description": "Route long agent output through lotra for human review"
+    }
+  ]
+}
