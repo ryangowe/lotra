@@ -1,6 +1,8 @@
-// In-memory working copy; disk is written only on flush (submit/save), never on edit.
+// Copy-on-write against disk: a file is "synced" until edited, then forks an
+// in-memory working copy; flush writes the copy back and returns to synced.
 export interface FileState {
   waiters: Array<(output: string) => void>;
+  // null when synced; the in-memory working copy when edited but not yet flushed.
   text: string | null;
 }
 
@@ -18,7 +20,7 @@ export interface DocStoreIo {
   writeMd(absPath: string, content: string): Promise<void>;
 }
 
-/** In-memory document store: edits accumulate in memory, flush writes to disk. */
+/** Document store that mirrors disk until an edit forks an in-memory working copy. */
 export function createStore(io: DocStoreIo): DocStore {
   const files = new Map<string, FileState>();
 
@@ -38,11 +40,11 @@ export function createStore(io: DocStoreIo): DocStore {
 
     async load(absPath) {
       const f = getFile(absPath);
-      if (f.text !== null) return f.text;
+      if (f.text !== null) return f.text; // forked: serve the working copy
+      // synced: re-read disk so external edits stay visible — never store it into
+      // f.text, or a later flush would clobber the disk. A setText racing the read wins.
       const content = await io.readMd(absPath);
-      // a concurrent load/edit may have filled text during the await
-      f.text ??= content;
-      return f.text;
+      return f.text ?? content;
     },
 
     setText(absPath, text) {
@@ -53,6 +55,7 @@ export function createStore(io: DocStoreIo): DocStore {
       const f = getFile(absPath);
       if (f.text === null) return;
       await io.writeMd(absPath, f.text);
+      f.text = null; // back to synced; next load re-reads disk
     },
   };
 }

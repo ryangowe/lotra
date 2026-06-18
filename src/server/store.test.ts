@@ -30,13 +30,34 @@ test("edits stay in memory until flush", async () => {
   expect(disk["/a.md"]).toBe("edited");
 });
 
-test("load reads disk once, then serves the in-memory copy", async () => {
+test("while synced, load re-reads disk so external edits are visible", async () => {
   const { disk, io } = fakeIo({ "/a.md": "v1" });
   const store = createStore(io);
 
   expect(await store.load("/a.md")).toBe("v1");
   disk["/a.md"] = "v2-external";
-  expect(await store.load("/a.md")).toBe("v1");
+  expect(await store.load("/a.md")).toBe("v2-external");
+});
+
+test("once edited, load serves the forked working copy, not disk", async () => {
+  const { disk, io } = fakeIo({ "/a.md": "v1" });
+  const store = createStore(io);
+
+  store.setText("/a.md", "edited");
+  disk["/a.md"] = "v2-external";
+  expect(await store.load("/a.md")).toBe("edited");
+});
+
+test("flush returns to synced state, so later external edits are visible", async () => {
+  const { disk, io } = fakeIo({ "/a.md": "v1" });
+  const store = createStore(io);
+
+  store.setText("/a.md", "edited");
+  await store.flush("/a.md");
+  expect(disk["/a.md"]).toBe("edited");
+
+  disk["/a.md"] = "v2-external";
+  expect(await store.load("/a.md")).toBe("v2-external");
 });
 
 test("flush is a no-op for a file that was never loaded", async () => {
