@@ -7,11 +7,9 @@ import {
 } from "../shared/constants.ts";
 import { createRoutes } from "./routes.ts";
 import { createStore } from "./store.ts";
-import { resolvePath } from "./paths.ts";
 import page from "../ui/page.html";
 
-export async function startServer(opts: { workingDir: string }) {
-  const cwd = opts.workingDir;
+export async function startServer() {
   const store = createStore({
     readMd: (p: string) => Bun.file(p).text(),
     writeMd: (p: string, c: string) => Bun.write(p, c).then(() => {}),
@@ -36,8 +34,6 @@ export async function startServer(opts: { workingDir: string }) {
   }
 
   const raw = createRoutes({
-    cwd,
-    resolvePath: (filePath: string) => resolvePath(cwd, filePath),
     ...store,
     genId: () => "c" + crypto.randomUUID().slice(0, 7),
     fileExists: (p: string) => Bun.file(p).exists(),
@@ -104,5 +100,5 @@ export async function startServer(opts: { workingDir: string }) {
 }
 
 if (import.meta.main) {
-  await startServer({ workingDir: process.env.LOTRA_CWD ?? process.cwd() });
+  await startServer();
 }

@@ -27,7 +27,6 @@ export async function ensureDaemon(): Promise<string> {
   const packageRoot = resolve(import.meta.dir, "../..");
   const proc = Bun.spawn(["bun", entryPoint], {
     cwd: packageRoot,
-    env: { ...process.env, LOTRA_CWD: process.cwd() },
     stdin: "ignore",
     stdout: "ignore",
     stderr: "ignore",

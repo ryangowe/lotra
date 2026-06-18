@@ -7,10 +7,9 @@ import {
   type RouteTable,
   type ServerContext,
 } from "../src/server/routes.ts";
-import { resolvePath } from "../src/server/paths.ts";
 
 // genId yields c0, c1, … so returned ids and callout contents are stable to assert.
-export function makeCtx(cwd: string): ServerContext {
+export function makeCtx(): ServerContext {
   let n = 0;
   const store = createStore({
     readMd: (p) => Bun.file(p).text(),
@@ -18,8 +17,6 @@ export function makeCtx(cwd: string): ServerContext {
   });
   return {
     ...store,
-    cwd,
-    resolvePath: (p) => resolvePath(cwd, p),
     genId: () => "c" + n++,
     fileExists: (p) => Bun.file(p).exists(),
   };
@@ -38,7 +35,7 @@ export async function withTmpDoc(content: string): Promise<TmpDoc> {
   const cwd = await mkdtemp(join(tmpdir(), "lotra-test-"));
   const file = join(cwd, "doc.md");
   await Bun.write(file, content);
-  const ctx = makeCtx(cwd);
+  const ctx = makeCtx();
   return {
     cwd,
     file,

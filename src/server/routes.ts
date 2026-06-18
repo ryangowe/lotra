@@ -1,4 +1,4 @@
-import { relative } from "node:path";
+import { basename, resolve } from "node:path";
 import { COMMENT_STATUSES } from "../shared/types.ts";
 import {
   extractComments,
@@ -13,8 +13,6 @@ import { getDocumentData } from "../document/render.ts";
 import type { DocStore } from "./store.ts";
 
 export interface ServerContext extends DocStore {
-  cwd: string;
-  resolvePath(p: string): string | null;
   genId(): string;
   fileExists(p: string): Promise<boolean>;
 }
@@ -22,19 +20,21 @@ export interface ServerContext extends DocStore {
 type Handler = (req: Request) => Promise<Response>;
 export type RouteTable = Record<string, Record<string, Handler>>;
 
-function fileParam(req: Request, ctx: ServerContext): string | null {
-  const f = new URL(req.url).searchParams.get("file");
-  if (!f) return null;
-  return ctx.resolvePath(f);
+function toAbs(file: unknown): string | null {
+  return typeof file === "string" && file ? resolve(file) : null;
+}
+
+function fileParam(req: Request): string | null {
+  return toAbs(new URL(req.url).searchParams.get("file"));
 }
 
 export function createRoutes(ctx: ServerContext): RouteTable {
   return {
     "/open": {
       POST: async (req) => {
-        const absPath = fileParam(req, ctx);
+        const absPath = fileParam(req);
         if (!absPath)
-          return Response.json({ error: "invalid file path" }, { status: 400 });
+          return Response.json({ error: "missing file path" }, { status: 400 });
         if (!(await ctx.fileExists(absPath)))
           return Response.json({ error: "file not found" }, { status: 404 });
         await ctx.load(absPath);
@@ -44,9 +44,9 @@ export function createRoutes(ctx: ServerContext): RouteTable {
 
     "/attach": {
       POST: async (req) => {
-        const absPath = fileParam(req, ctx);
+        const absPath = fileParam(req);
         if (!absPath)
-          return Response.json({ error: "invalid file path" }, { status: 400 });
+          return Response.json({ error: "missing file path" }, { status: 400 });
         const file = ctx.getFile(absPath);
         const output = await new Promise<string>((r) => file.waiters.push(r));
         return new Response(output, {
@@ -57,9 +57,9 @@ export function createRoutes(ctx: ServerContext): RouteTable {
 
     "/submit": {
       POST: async (req) => {
-        const absPath = fileParam(req, ctx);
+        const absPath = fileParam(req);
         if (!absPath)
-          return Response.json({ error: "invalid file path" }, { status: 400 });
+          return Response.json({ error: "missing file path" }, { status: 400 });
         const file = ctx.getFile(absPath);
 
         const md = await ctx.load(absPath);
@@ -75,9 +75,9 @@ export function createRoutes(ctx: ServerContext): RouteTable {
 
     "/handoff": {
       GET: async (req) => {
-        const absPath = fileParam(req, ctx);
+        const absPath = fileParam(req);
         if (!absPath)
-          return Response.json({ error: "invalid file path" }, { status: 400 });
+          return Response.json({ error: "missing file path" }, { status: 400 });
 
         const md = await ctx.load(absPath);
         const output = formatCommentsForStdout(extractComments(md));
@@ -89,9 +89,9 @@ export function createRoutes(ctx: ServerContext): RouteTable {
 
     "/resolve": {
       POST: async (req) => {
-        const absPath = fileParam(req, ctx);
+        const absPath = fileParam(req);
         if (!absPath)
-          return Response.json({ error: "invalid file path" }, { status: 400 });
+          return Response.json({ error: "missing file path" }, { status: 400 });
 
         const { ids } = (await req.json()) as Record<string, any>;
         if (!Array.isArray(ids))
@@ -111,10 +111,10 @@ export function createRoutes(ctx: ServerContext): RouteTable {
       GET: async (req) => {
         const fileQuery = new URL(req.url).searchParams.get("file");
         if (fileQuery) {
-          const absPath = ctx.resolvePath(fileQuery);
+          const absPath = toAbs(fileQuery);
           if (!absPath)
             return Response.json(
-              { error: "invalid file path" },
+              { error: "missing file path" },
               { status: 400 },
             );
           const file = ctx.peekFile(absPath);
@@ -134,13 +134,13 @@ export function createRoutes(ctx: ServerContext): RouteTable {
 
     "/api/document": {
       GET: async (req) => {
-        const absPath = fileParam(req, ctx);
+        const absPath = fileParam(req);
         if (!absPath)
-          return Response.json({ error: "invalid file path" }, { status: 400 });
+          return Response.json({ error: "missing file path" }, { status: 400 });
         if (!(await ctx.fileExists(absPath)))
           return Response.json({ error: "file not found" }, { status: 404 });
         const md = await ctx.load(absPath);
-        return Response.json(getDocumentData(relative(ctx.cwd, absPath), md));
+        return Response.json(getDocumentData(basename(absPath), md));
       },
     },
 
@@ -152,9 +152,9 @@ export function createRoutes(ctx: ServerContext): RouteTable {
           body,
           status = "requested",
         } = (await req.json()) as Record<string, any>;
-        const absPath = ctx.resolvePath(filePath);
+        const absPath = toAbs(filePath);
         if (!absPath)
-          return Response.json({ error: "invalid file path" }, { status: 400 });
+          return Response.json({ error: "missing file path" }, { status: 400 });
 
         const validation = sanitize(body);
         if (!validation.valid)
@@ -188,9 +188,9 @@ export function createRoutes(ctx: ServerContext): RouteTable {
           id,
           body,
         } = (await req.json()) as Record<string, any>;
-        const absPath = ctx.resolvePath(filePath);
+        const absPath = toAbs(filePath);
         if (!absPath)
-          return Response.json({ error: "invalid file path" }, { status: 400 });
+          return Response.json({ error: "missing file path" }, { status: 400 });
 
         const validation = sanitize(body);
         if (!validation.valid)
@@ -211,9 +211,9 @@ export function createRoutes(ctx: ServerContext): RouteTable {
           string,
           any
         >;
-        const absPath = ctx.resolvePath(filePath);
+        const absPath = toAbs(filePath);
         if (!absPath)
-          return Response.json({ error: "invalid file path" }, { status: 400 });
+          return Response.json({ error: "missing file path" }, { status: 400 });
 
         const md = await ctx.load(absPath);
         ctx.setText(absPath, removeComment(md, id));
@@ -228,9 +228,9 @@ export function createRoutes(ctx: ServerContext): RouteTable {
           id,
           status,
         } = (await req.json()) as Record<string, any>;
-        const absPath = ctx.resolvePath(filePath);
+        const absPath = toAbs(filePath);
         if (!absPath)
-          return Response.json({ error: "invalid file path" }, { status: 400 });
+          return Response.json({ error: "missing file path" }, { status: 400 });
         if (!(COMMENT_STATUSES as readonly string[]).includes(status))
           return Response.json({ error: "invalid status" }, { status: 400 });
 

@@ -103,7 +103,7 @@ test("/api/document returns h1 title, indexed blocks, and anchored comments", as
   expect(data.comments[0].blockIndex).toBe(1);
 });
 
-test("title falls back to the relative path when there is no h1", async () => {
+test("title falls back to the file name when there is no h1", async () => {
   await using doc = await withTmpDoc(NO_HEADING);
   const res = await get(doc.routes, "/api/document", { file: doc.file });
   expect((await res.json()).title).toBe("doc.md");

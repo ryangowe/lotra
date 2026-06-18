@@ -49,11 +49,6 @@ lotra status
 | `note`      | Informational hint (agent must read the file directly) |
 | `resolved`  | Addressed (folded in browser)                          |
 
-## Security
-
-- Server binds to `127.0.0.1` (localhost only)
-- File access restricted to the invoking directory
-
 ## Installation
 
 Requires [Bun](https://bun.sh).
