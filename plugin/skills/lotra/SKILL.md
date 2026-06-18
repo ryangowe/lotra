@@ -32,7 +32,7 @@ Commands:
 
 ### Request feedback
 
-Use `bun x lotra relay <file>` to open the markdown document in the browser
+Use `bun x @ryangowe/lotra relay <file>` to open the markdown document in the browser
 and block, waiting for the user's feedback.
 
 The command returns the user's comments, along with the content those comments refer to.
@@ -42,7 +42,7 @@ The command returns the user's comments, along with the content those comments r
 For a document that has gone through the lotra flow, this is another way to get feedback.
 
 You can read the user's feedback in the markdown document at any time
-with `bun x lotra handoff <file>`.
+with `bun x @ryangowe/lotra handoff <file>`.
 
 ### Read the document directly
 
@@ -54,7 +54,7 @@ are written back directly below the commented block, using markdown callout synt
 ### Mark resolved
 
 After you have addressed the concerns based on the user's comments,
-use `bun x lotra resolve <file> <id...>`
+use `bun x @ryangowe/lotra resolve <file> <id...>`
 to mark the comments as resolved.
 
 You can of course still edit the markdown document itself,

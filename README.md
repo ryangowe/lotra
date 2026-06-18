@@ -54,13 +54,13 @@ lotra status
 Requires [Bun](https://bun.sh).
 
 ```bash
-bun install -g lotra
+bun install -g @ryangowe/lotra
 ```
 
 Or run it without installing:
 
 ```bash
-bunx lotra ./doc.md
+bunx @ryangowe/lotra ./doc.md
 ```
 
 ## License

@@ -1,5 +1,5 @@
 {
-  "name": "lotra",
+  "name": "@ryangowe/lotra",
   "version": "0.1.0",
   "description": "Long Text Review and Annotate — review markdown in the browser, relay comments back to your agent",
   "license": "MIT",
@@ -11,6 +11,9 @@
   "homepage": "https://github.com/ryangowe/lotra#readme",
   "module": "index.ts",
   "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "dev": "NODE_ENV=development bun src/server/server.ts",
     "test": "bun test"

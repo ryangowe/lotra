@@ -68,17 +68,17 @@ describe("lotraPackage", () => {
   test("pins to the bundled manifest version", async () => {
     const root = join(import.meta.dir, "..");
     const pkg = await Bun.file(join(root, "package.json")).json();
-    expect(await lotraPackage()).toBe(`lotra@${pkg.version}`);
+    expect(await lotraPackage()).toBe(`@ryangowe/lotra@${pkg.version}`);
   });
   test("reads the manifest under an explicit root (as CLAUDE_PLUGIN_ROOT would)", async () => {
     const root = join(import.meta.dir, "..");
     const pkg = await Bun.file(join(root, "package.json")).json();
     expect(await lotraPackage(join(root, "plugin"))).toBe(
-      `lotra@${pkg.version}`,
+      `@ryangowe/lotra@${pkg.version}`,
     );
   });
-  test("falls back to bare lotra when no manifest", async () => {
-    expect(await lotraPackage("/no/such/dir")).toBe("lotra");
+  test("falls back to the unversioned package when no manifest", async () => {
+    expect(await lotraPackage("/no/such/dir")).toBe("@ryangowe/lotra");
   });
 });
 
