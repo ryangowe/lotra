@@ -1,5 +1,6 @@
 import { resolve } from "node:path";
 import { Command } from "commander";
+import { readPrompt } from "./prompt.ts";
 
 export function buildCli(daemonUrl: string): Command {
   const program = new Command()
@@ -32,6 +33,11 @@ export function buildCli(daemonUrl: string): Command {
     .command("status")
     .description("show open files")
     .action(() => handleStatus(daemonUrl));
+
+  program
+    .command("prompt")
+    .description("print agent instructions to stdout")
+    .action(() => handlePrompt());
 
   return program;
 }
@@ -119,6 +125,15 @@ async function handleStatus(daemonUrl: string) {
   for (const f of data.files) {
     const waiting = f.waiters > 0 ? ` (${f.waiters} waiting)` : "";
     console.log(`${f.file}${waiting}`);
+  }
+}
+
+async function handlePrompt() {
+  try {
+    process.stdout.write(await readPrompt());
+  } catch (err) {
+    console.error(err instanceof Error ? err.message : err);
+    process.exit(1);
   }
 }
 
