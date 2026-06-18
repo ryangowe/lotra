@@ -1,0 +1,7 @@
+version: 2
+updates:
+  # Keep the workflow actions up to date (major bumps + security advisories).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

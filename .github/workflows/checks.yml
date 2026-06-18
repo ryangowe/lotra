@@ -1,0 +1,24 @@
+name: Checks
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      # pre-commit's hooks need bun and the project's deps.
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+      - run: bun install --frozen-lockfile
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+      - uses: pre-commit/action@v3.0.1
