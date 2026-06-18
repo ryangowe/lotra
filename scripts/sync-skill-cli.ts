@@ -6,7 +6,7 @@ import { buildCli } from "../src/cli/cli.ts";
 const skillPath = join(import.meta.dir, "../plugin/skills/lotra/SKILL.md");
 const block = /## CLI\n\n```\n[\s\S]*?\n```/;
 
-const help = buildCli("http://127.0.0.1:0").helpInformation().trimEnd();
+const help = buildCli().helpInformation().trimEnd();
 const skill = await Bun.file(skillPath).text();
 
 if (!block.test(skill)) {

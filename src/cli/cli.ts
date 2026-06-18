@@ -1,38 +1,40 @@
 import { resolve } from "node:path";
 import { Command } from "commander";
+import { ensureDaemon } from "../server/daemon.ts";
 import { readPrompt } from "./prompt.ts";
 
-export function buildCli(daemonUrl: string): Command {
+// Invoked lazily inside each handler, so daemon-free commands (prompt, help) never spawn it.
+type Connect = () => Promise<string>;
+
+export function buildCli(connect: Connect = ensureDaemon): Command {
   const program = new Command()
     .name("lotra")
     .description("Long Text Review and Annotate")
     .argument("[file]", "open file in browser")
     .action((file?: string) => {
       if (!file) return program.help();
-      return handleOpen(daemonUrl, file);
+      return handleOpen(connect, file);
     });
 
   program
     .command("relay <file>")
     .description("wait for user comments, output to stdout")
-    .action((file: string) => handleRelay(daemonUrl, file));
+    .action((file: string) => handleRelay(connect, file));
 
   program
     .command("handoff <file>")
     .description("output current comments to stdout")
-    .action((file: string) => handleHandoff(daemonUrl, file));
+    .action((file: string) => handleHandoff(connect, file));
 
   program
     .command("resolve <file> <ids...>")
     .description("mark comments as resolved")
-    .action((file: string, ids: string[]) =>
-      handleResolve(daemonUrl, file, ids),
-    );
+    .action((file: string, ids: string[]) => handleResolve(connect, file, ids));
 
   program
     .command("status")
     .description("show open files")
-    .action(() => handleStatus(daemonUrl));
+    .action(() => handleStatus(connect));
 
   program
     .command("prompt")
@@ -42,15 +44,16 @@ export function buildCli(daemonUrl: string): Command {
   return program;
 }
 
-export async function runCli(daemonUrl: string) {
-  await buildCli(daemonUrl).parseAsync();
+export async function runCli(connect?: Connect) {
+  await buildCli(connect).parseAsync();
 }
 
 function fileUrl(daemonUrl: string, path: string, absFile: string): string {
   return `${daemonUrl}${path}?file=${encodeURIComponent(absFile)}`;
 }
 
-async function handleOpen(daemonUrl: string, file: string) {
+async function handleOpen(connect: Connect, file: string) {
+  const daemonUrl = await connect();
   const absFile = resolve(file);
   const res = await fetch(fileUrl(daemonUrl, "/open", absFile), {
     method: "POST",
@@ -63,7 +66,8 @@ async function handleOpen(daemonUrl: string, file: string) {
   openBrowser(fileUrl(daemonUrl, "/view", absFile));
 }
 
-async function handleRelay(daemonUrl: string, file: string) {
+async function handleRelay(connect: Connect, file: string) {
+  const daemonUrl = await connect();
   const absFile = resolve(file);
   const openRes = await fetch(fileUrl(daemonUrl, "/open", absFile), {
     method: "POST",
@@ -87,7 +91,8 @@ async function handleRelay(daemonUrl: string, file: string) {
   if (output) process.stdout.write(output + "\n");
 }
 
-async function handleHandoff(daemonUrl: string, file: string) {
+async function handleHandoff(connect: Connect, file: string) {
+  const daemonUrl = await connect();
   const absFile = resolve(file);
   const res = await fetch(fileUrl(daemonUrl, "/handoff", absFile));
   if (!res.ok) {
@@ -99,7 +104,8 @@ async function handleHandoff(daemonUrl: string, file: string) {
   if (output) process.stdout.write(output + "\n");
 }
 
-async function handleResolve(daemonUrl: string, file: string, ids: string[]) {
+async function handleResolve(connect: Connect, file: string, ids: string[]) {
+  const daemonUrl = await connect();
   const absFile = resolve(file);
   const res = await fetch(fileUrl(daemonUrl, "/resolve", absFile), {
     method: "POST",
@@ -113,7 +119,8 @@ async function handleResolve(daemonUrl: string, file: string, ids: string[]) {
   }
 }
 
-async function handleStatus(daemonUrl: string) {
+async function handleStatus(connect: Connect) {
+  const daemonUrl = await connect();
   const res = await fetch(`${daemonUrl}/status`);
   const data = (await res.json()) as {
     files: Array<{ file: string; waiters: number }>;
