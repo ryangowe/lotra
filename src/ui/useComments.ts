@@ -53,13 +53,31 @@ export function useComments(file: string) {
   });
 
   const editMut = useMutation({
-    mutationFn: ({ id, body }: { id: string; body: string }) =>
-      composingBlockIndex !== null
-        ? addComment(file, composingBlockIndex, body)
-        : editComment(file, id, body),
-    onSettled: () => {
+    mutationFn: ({ id, body }: { id: string; body: string }) => {
+      if (composingBlockIndex === null) return editComment(file, id, body);
+      // The draft's chosen type lives only in the optimistic cache (the new
+      // comment isn't on the server yet); carry it into the create request.
+      const draft = qc
+        .getQueryData<DocumentData>(key)
+        ?.comments.find((c) => c.id === "__new__");
+      return addComment(
+        file,
+        composingBlockIndex,
+        body,
+        draft?.status ?? "requested",
+      );
+    },
+    onSuccess: () => {
       setComposingBlockIndex(null);
       invalidate();
+    },
+    // A failed save (e.g. the server rejects disallowed markdown) must not
+    // invalidate: a refetch would drop the unsaved __new__ card and the draft
+    // with it. Keep the draft and its composing state, and reopen the editor so
+    // the user sees the error and can fix the text instead of losing it.
+    onError: (_e, { id }) => {
+      setFocusEditId(null);
+      setTimeout(() => setFocusEditId(id), 0);
     },
   });
 
@@ -123,8 +141,20 @@ export function useComments(file: string) {
     focusEditId,
     startCompose,
     cancelCompose,
-    onStatusChange: (id: string, status: CommentStatus) =>
-      statusMut.mutate({ id, status }),
+    onStatusChange: (id: string, status: CommentStatus) => {
+      // A new comment exists only in the cache; sending its id to the server
+      // would 404 and the refetch would drop the card, taking the unsaved
+      // draft with it. Update the type locally and let the create carry it.
+      if (id === "__new__") {
+        optimistic((d) =>
+          withComments(d, (cs) =>
+            cs.map((c) => (c.id === id ? { ...c, status } : c)),
+          ),
+        );
+        return;
+      }
+      statusMut.mutate({ id, status });
+    },
     onEdit: (id: string, body: string) => {
       setFocusEditId(null);
       editMut.mutate({ id, body });

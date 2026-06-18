@@ -41,6 +41,15 @@ test("a comment's full lifecycle is reflected in /api/document", async () => {
   expect(await commentsOf(doc)).toEqual([]);
 });
 
+test("a comment added with a non-default status keeps that status", async () => {
+  await using doc = await withTmpDoc(DOC);
+
+  await post(doc.routes, "/api/comment/add", {
+    body: { file: doc.file, blockIndex: 1, body: "记一笔", status: "note" },
+  });
+  expect((await commentsOf(doc))[0].status).toBe("note");
+});
+
 test("a second comment on the same block is rejected with 409", async () => {
   await using doc = await withTmpDoc(DOC);
 

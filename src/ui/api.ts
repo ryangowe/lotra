@@ -24,8 +24,12 @@ export async function fetchDocument(file: string): Promise<DocumentData> {
   return data;
 }
 
-export const addComment = (file: string, blockIndex: number, body: string) =>
-  postJson("/api/comment/add", { file, blockIndex, body });
+export const addComment = (
+  file: string,
+  blockIndex: number,
+  body: string,
+  status: CommentStatus,
+) => postJson("/api/comment/add", { file, blockIndex, body, status });
 
 export const editComment = (file: string, id: string, body: string) =>
   postJson("/api/comment/edit", { file, id, body });
