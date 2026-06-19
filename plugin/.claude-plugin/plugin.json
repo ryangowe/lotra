@@ -1,6 +1,6 @@
 {
   "name": "lotra",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Route long agent output through lotra for human review",
   "author": {
     "name": "ryangowe"
