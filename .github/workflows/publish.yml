@@ -1,0 +1,12 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  npm:
+    uses: ./.github/workflows/npm-publish.yml
+  release:
+    uses: ./.github/workflows/github-release.yml

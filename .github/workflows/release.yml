@@ -23,45 +23,31 @@ jobs:
   check:
     uses: ./.github/workflows/checks.yml
 
-  publish:
+  bump:
     needs: check
     runs-on: ubuntu-latest
     permissions:
-      contents: write # gh release create + push bump commit
-      id-token: write # npm trusted publishing (OIDC)
+      contents: write
     steps:
       - uses: actions/checkout@v6
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: "1.3.14"
 
-      - name: Bump version
-        run: |
+      - run: |
           bun scripts/bump-version.ts ${{ inputs.bump }}
           VERSION="$(jq -r .version package.json)"
-          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-
-      - name: Commit version bump
-        run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add package.json plugin/.claude-plugin/plugin.json
           git commit -m "chore: bump version to $VERSION"
-          git push
+          git tag -a "v$VERSION" -m "v$VERSION"
+          git push --follow-tags
 
-      - uses: actions/setup-node@v6
-        with:
-          # node 24 provides npm >= 11.5.1, required for OIDC trusted publishing.
-          node-version: "24"
-          registry-url: https://registry.npmjs.org
-
-      # npm (not bun): bun publish can't do npm OIDC trusted publishing.
-      - run: npm publish --provenance
-
-      - env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create "v$VERSION" --target HEAD --title "v$VERSION" --generate-notes
+  npm:
+    needs: bump
+    uses: ./.github/workflows/npm-publish.yml
+  release:
+    needs: bump
+    uses: ./.github/workflows/github-release.yml
