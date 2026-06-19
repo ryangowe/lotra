@@ -57,10 +57,11 @@ Requires [Bun](https://bun.sh).
 bun install -g @ryangowe/lotra
 ```
 
-Or run it without installing:
+To let your agent drive lotra automatically, install the plugin from its marketplace:
 
-```bash
-bunx @ryangowe/lotra ./doc.md
+```
+/plugin marketplace add ryangowe/lotra
+/plugin install lotra@lotra
 ```
 
 ## License
