@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 import { Command } from "commander";
-import { ensureDaemon } from "../server/daemon.ts";
+import { ensureDaemon, restartDaemon } from "../server/daemon.ts";
 import { readPrompt } from "./prompt.ts";
 
 // Invoked lazily inside each handler, so daemon-free commands (prompt, help) never spawn it.
@@ -35,6 +35,11 @@ export function buildCli(connect: Connect = ensureDaemon): Command {
     .command("status")
     .description("show open files")
     .action(() => handleStatus(connect));
+
+  program
+    .command("restart")
+    .description("restart the daemon")
+    .action(() => handleRestart());
 
   program
     .command("prompt")
@@ -133,6 +138,12 @@ async function handleStatus(connect: Connect) {
     const waiting = f.waiters > 0 ? ` (${f.waiters} waiting)` : "";
     console.log(`${f.file}${waiting}`);
   }
+}
+
+async function handleRestart() {
+  console.log("Restarting daemon...");
+  await restartDaemon();
+  console.log("Daemon restarted.");
 }
 
 async function handlePrompt() {

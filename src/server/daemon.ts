@@ -1,6 +1,30 @@
 import { resolve } from "node:path";
 import { PORT_FILE } from "../shared/constants.ts";
 
+async function stopDaemon(): Promise<boolean> {
+  const url = await getDaemonUrl();
+  if (!url) return false;
+
+  try {
+    await fetch(`${url}/shutdown`, {
+      method: "POST",
+      signal: AbortSignal.timeout(2000),
+    });
+  } catch {}
+
+  for (let i = 0; i < 30; i++) {
+    await Bun.sleep(100);
+    if (!(await Bun.file(PORT_FILE).exists())) return true;
+  }
+  return false;
+}
+
+export async function restartDaemon(): Promise<string> {
+  const stopped = await stopDaemon();
+  if (!stopped) throw new Error("Failed to stop lotra daemon");
+  return ensureDaemon();
+}
+
 export async function getDaemonUrl(): Promise<string | null> {
   const file = Bun.file(PORT_FILE);
   if (!(await file.exists())) return null;

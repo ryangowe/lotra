@@ -33,10 +33,16 @@ export async function startServer() {
     };
   }
 
+  let server: ReturnType<typeof Bun.serve>;
+
   const raw = createRoutes({
     ...store,
     genId: () => "c" + crypto.randomUUID().slice(0, 7),
     fileExists: (p: string) => Bun.file(p).exists(),
+    onShutdown: () => {
+      server.stop(true);
+      process.exit(0);
+    },
   });
 
   const routes: Record<
@@ -59,8 +65,6 @@ export async function startServer() {
       "/favicon.ico": new Response(null, { status: 204 }),
       ...routes,
     },
-    // Production (default) bundles the UI once and caches it; NODE_ENV=development
-    // opts into hot-reloading for local development.
     development:
       process.env.NODE_ENV === "development"
         ? { hmr: true, console: true }
@@ -71,7 +75,6 @@ export async function startServer() {
     },
   };
 
-  let server;
   try {
     server = Bun.serve({ ...serveConfig, port: DEFAULT_PORT });
   } catch {

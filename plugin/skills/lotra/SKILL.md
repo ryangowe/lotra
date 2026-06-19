@@ -25,6 +25,7 @@ Commands:
   handoff <file>           output current comments to stdout
   resolve <file> <ids...>  mark comments as resolved
   status                   show open files
+  restart                  restart the daemon
   prompt                   print agent instructions to stdout
 ```
 

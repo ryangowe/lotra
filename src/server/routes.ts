@@ -15,6 +15,7 @@ import type { DocStore } from "./store.ts";
 export interface ServerContext extends DocStore {
   genId(): string;
   fileExists(p: string): Promise<boolean>;
+  onShutdown?(): void;
 }
 
 type Handler = (req: Request) => Promise<Response>;
@@ -217,6 +218,18 @@ export function createRoutes(ctx: ServerContext): RouteTable {
 
         const md = await ctx.load(absPath);
         ctx.setText(absPath, removeComment(md, id));
+        return Response.json({ ok: true });
+      },
+    },
+
+    "/shutdown": {
+      POST: async () => {
+        for (const [path] of ctx.allFiles()) {
+          try {
+            await ctx.flush(path);
+          } catch {}
+        }
+        ctx.onShutdown?.();
         return Response.json({ ok: true });
       },
     },
