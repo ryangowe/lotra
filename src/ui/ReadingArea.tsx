@@ -89,7 +89,7 @@ export function ReadingArea({
   );
 
   return (
-    <main ref={mainRef} className="flex-1 overflow-y-auto">
+    <main ref={mainRef} className="flex-1 overflow-y-auto xl:pr-(--sidebar-w)">
       <div className="mx-auto max-w-[752px] px-[clamp(24px,4vw,52px)] pb-[200px] pt-[clamp(40px,4.5vw,76px)]">
         {blocks.map((block) => {
           const bc = commentsFor(block.index);

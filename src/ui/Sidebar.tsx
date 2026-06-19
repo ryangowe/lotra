@@ -132,7 +132,7 @@ export function Sidebar({
   );
 
   return (
-    <aside className="flex w-[clamp(206px,20vw,300px)] flex-none flex-col border-r border-line bg-side">
+    <aside className="flex w-(--sidebar-w) flex-none flex-col border-r border-line bg-side">
       <div className="px-5 pb-4 pt-[22px]">
         <div className="flex items-center gap-2">
           <img src={logo} alt="" className="size-6" />

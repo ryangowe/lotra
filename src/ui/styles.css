@@ -71,6 +71,9 @@
 }
 
 @layer base {
+  :root {
+    --sidebar-w: clamp(206px, 20vw, 300px);
+  }
   body {
     margin: 0;
     -webkit-font-smoothing: antialiased;
