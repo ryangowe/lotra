@@ -84,8 +84,10 @@ async function handleRelay(connect: Connect, file: string) {
   }
   openBrowser(fileUrl(daemonUrl, "/view", absFile));
 
+  // Bun's fetch has a 300s default timeout; attach blocks until user submits.
   const res = await fetch(fileUrl(daemonUrl, "/attach", absFile), {
     method: "POST",
+    signal: new AbortController().signal,
   });
   if (!res.ok) {
     const data = (await res.json()) as Record<string, any>;
