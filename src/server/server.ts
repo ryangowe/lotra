@@ -90,6 +90,7 @@ export async function startServer() {
   const serveConfig = {
     hostname: "127.0.0.1",
     idleTimeout: 0,
+    reusePort: false,
     routes: {
       ...viewRoutes,
       "/favicon.ico": new Response(null, { status: 204 }),
