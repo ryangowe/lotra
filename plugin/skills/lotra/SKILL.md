@@ -33,8 +33,10 @@ Commands:
 
 ### Request feedback
 
-Use `lotra relay <file>` to open the markdown document in the browser
-and block, waiting for the user's feedback.
+`lotra relay <file>` is the rich equivalent of AskUserQuestion: it opens the document in the browser and blocks until the user submits inline comments. Use it whenever:
+
+- You need feedback on a document, spec, plan, or long answer.
+- You have multiple questions or decision points — lotra lets the user comment on each in context, whereas AskUserQuestion is limited to 4 standalone questions.
 
 The command returns the user's comments, along with the content those comments refer to.
 
