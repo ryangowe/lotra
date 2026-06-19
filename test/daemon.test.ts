@@ -1,15 +1,41 @@
-import { test, expect, beforeEach, afterEach } from "bun:test";
-import { unlink } from "node:fs/promises";
-import { PORT_FILE } from "../src/shared/constants.ts";
+import {
+  test,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  afterEach,
+} from "bun:test";
+import { mkdtemp, rm, unlink } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
+let testDir: string;
+let portFile: string;
+let testPort: number;
 const tmpFiles: string[] = [];
+
+beforeAll(async () => {
+  testDir = await mkdtemp(join(tmpdir(), "lotra-daemon-test-"));
+  portFile = join(testDir, "port");
+  testPort = 17300 + Math.floor(Math.random() * 600);
+});
+
+afterAll(async () => {
+  await shutdownDaemon();
+  await rm(testDir, { recursive: true, force: true });
+});
+
+function daemonEnv() {
+  return { LOTRA_PORT_DIR: testDir, LOTRA_PORT: String(testPort) };
+}
 
 async function waitForDaemon(
   timeoutMs = 5000,
 ): Promise<{ port: string; url: string }> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
-    const file = Bun.file(PORT_FILE);
+    const file = Bun.file(portFile);
     if (await file.exists()) {
       const port = (await file.text()).trim();
       try {
@@ -25,7 +51,7 @@ async function waitForDaemon(
 }
 
 async function shutdownDaemon() {
-  const file = Bun.file(PORT_FILE);
+  const file = Bun.file(portFile);
   if (!(await file.exists())) return;
   const port = (await file.text()).trim();
   try {
@@ -36,7 +62,7 @@ async function shutdownDaemon() {
   } catch {}
   for (let i = 0; i < 30; i++) {
     await Bun.sleep(100);
-    if (!(await Bun.file(PORT_FILE).exists())) return;
+    if (!(await Bun.file(portFile).exists())) return;
   }
 }
 
@@ -50,12 +76,17 @@ function spawnDaemon() {
       await ensureDaemon();
       `,
     ],
-    { stdin: "ignore", stdout: "pipe", stderr: "pipe" },
+    {
+      stdin: "ignore",
+      stdout: "pipe",
+      stderr: "pipe",
+      env: { ...process.env, ...daemonEnv() },
+    },
   );
 }
 
 function tmpFile(): string {
-  const path = `/tmp/lotra-daemon-test-${Date.now()}.md`;
+  const path = join(testDir, `doc-${Date.now()}.md`);
   tmpFiles.push(path);
   return path;
 }
@@ -100,7 +131,12 @@ test("daemon serves HTML and CSS after spawner exits", async () => {
       await fetch(url + '/open?file=${encodedFile}', { method: 'POST' });
       `,
     ],
-    { stdin: "ignore", stdout: "pipe", stderr: "pipe" },
+    {
+      stdin: "ignore",
+      stdout: "pipe",
+      stderr: "pipe",
+      env: { ...process.env, ...daemonEnv() },
+    },
   );
   await spawner.exited;
   await Bun.sleep(500);
@@ -125,7 +161,7 @@ test("SIGTERM cleans up port file", async () => {
   await Bun.sleep(500);
 
   const { url } = await waitForDaemon();
-  expect(await Bun.file(PORT_FILE).exists()).toBe(true);
+  expect(await Bun.file(portFile).exists()).toBe(true);
 
   const status = (await (await fetch(`${url}/status`)).json()) as {
     pid: number;
@@ -134,9 +170,9 @@ test("SIGTERM cleans up port file", async () => {
 
   for (let i = 0; i < 30; i++) {
     await Bun.sleep(100);
-    if (!(await Bun.file(PORT_FILE).exists())) break;
+    if (!(await Bun.file(portFile).exists())) break;
   }
-  expect(await Bun.file(PORT_FILE).exists()).toBe(false);
+  expect(await Bun.file(portFile).exists()).toBe(false);
 });
 
 test("shutdown flushes files and cleans up port file", async () => {
@@ -145,14 +181,14 @@ test("shutdown flushes files and cleans up port file", async () => {
   await Bun.sleep(500);
 
   const { url } = await waitForDaemon();
-  expect(await Bun.file(PORT_FILE).exists()).toBe(true);
+  expect(await Bun.file(portFile).exists()).toBe(true);
 
   const res = await fetch(`${url}/shutdown`, { method: "POST" });
   expect(res.status).toBe(200);
 
   for (let i = 0; i < 30; i++) {
     await Bun.sleep(100);
-    if (!(await Bun.file(PORT_FILE).exists())) break;
+    if (!(await Bun.file(portFile).exists())) break;
   }
-  expect(await Bun.file(PORT_FILE).exists()).toBe(false);
+  expect(await Bun.file(portFile).exists()).toBe(false);
 });
