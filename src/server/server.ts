@@ -8,6 +8,7 @@ import {
 import { createRoutes } from "./routes.ts";
 import { createStore } from "./store.ts";
 import page from "../ui/page.html";
+import { buildPage } from "./buildPage.ts";
 
 export async function startServer() {
   const store = createStore({
@@ -58,17 +59,30 @@ export async function startServer() {
 
   await Bun.$`mkdir -p ${PORT_DIR}`.quiet();
 
+  const isDev = process.env.NODE_ENV === "development";
+
+  // HTML import emits /../../ asset paths; prod pre-builds with explicit root to fix them
+  let viewRoutes: Record<string, unknown>;
+  if (isDev) {
+    viewRoutes = { "/view": page };
+  } else {
+    const { html, assets } = await buildPage();
+    viewRoutes = {
+      "/view": new Response(html, {
+        headers: { "Content-Type": "text/html;charset=utf-8" },
+      }),
+      ...assets,
+    };
+  }
+
   const serveConfig = {
     hostname: "127.0.0.1",
     routes: {
-      "/view": page,
+      ...viewRoutes,
       "/favicon.ico": new Response(null, { status: 204 }),
       ...routes,
     },
-    development:
-      process.env.NODE_ENV === "development"
-        ? { hmr: true, console: true }
-        : false,
+    development: isDev ? { hmr: true, console: true } : false,
     fetch() {
       resetIdle();
       return new Response("Not found", { status: 404 });
