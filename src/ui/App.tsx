@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Toaster, toast } from "sonner";
 import type { DocumentData } from "../shared/types.ts";
@@ -25,11 +25,6 @@ export function App({ file }: { file: string }) {
   useEffect(() => {
     if (data?.title) document.title = data.title;
   }, [data?.title]);
-
-  const unresolvedCount = useMemo(
-    () => data?.comments.filter((c) => c.status !== "resolved").length ?? 0,
-    [data],
-  );
 
   if (isError)
     return (
@@ -65,7 +60,7 @@ export function App({ file }: { file: string }) {
         onCancelCompose={comments.cancelCompose}
         scrollToRef={scrollToRef}
       />
-      <SubmitFloat file={file} unresolvedCount={unresolvedCount} />
+      <SubmitFloat file={file} />
       <Toaster position="top-center" />
     </div>
   );

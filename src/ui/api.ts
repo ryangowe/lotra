@@ -48,7 +48,9 @@ export async function submitToAgent(file: string): Promise<void> {
   if (!res.ok) throw new Error("submit failed");
 }
 
-export async function pollStatus(file: string): Promise<{ waiters: number }> {
+export async function pollStatus(
+  file: string,
+): Promise<{ waiters: number; dirty: boolean }> {
   const res = await fetch(`/status?${q(file)}`);
   return res.json();
 }

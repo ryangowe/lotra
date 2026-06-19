@@ -123,6 +123,7 @@ export function createRoutes(ctx: ServerContext): RouteTable {
             file: absPath,
             registered: !!file,
             waiters: file?.waiters.length ?? 0,
+            dirty: file?.text !== null,
           });
         }
         const status = [...ctx.allFiles()].map(([p, s]) => ({

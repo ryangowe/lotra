@@ -4,13 +4,7 @@ import { toast } from "sonner";
 import { ArrowRight } from "lucide-react";
 import { submitToAgent, pollStatus } from "./api.ts";
 
-export function SubmitFloat({
-  file,
-  unresolvedCount,
-}: {
-  file: string;
-  unresolvedCount: number;
-}) {
+export function SubmitFloat({ file }: { file: string }) {
   const [submitted, setSubmitted] = useState(false);
   const resetTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -22,6 +16,7 @@ export function SubmitFloat({
     refetchInterval: 2000,
   });
   const agentWaiting = (status?.waiters ?? 0) > 0;
+  const dirty = status?.dirty ?? false;
 
   const handleSubmit = useCallback(async () => {
     try {
@@ -38,17 +33,17 @@ export function SubmitFloat({
   let dotClass: string;
   let btnLabel: string;
   if (submitted) {
-    label = "Sent — agent is revising";
+    label = "Saved locally";
     dotClass = "bg-done";
     btnLabel = "Submitted";
   } else if (agentWaiting) {
-    label = `${unresolvedCount} change${unresolvedCount === 1 ? "" : "s"} · agent is waiting`;
+    label = dirty ? "Unsaved changes · agent is waiting" : "Agent is waiting";
     dotClass = "bg-accent [animation:lotra-pulse_1.5s_ease-in-out_infinite]";
-    btnLabel = "Submit to agent";
+    btnLabel = "Handoff to agent";
   } else {
-    label = "Saved locally";
+    label = dirty ? "Unsaved changes" : "Saved locally";
     dotClass = "bg-accent";
-    btnLabel = "Save draft";
+    btnLabel = "Save comments";
   }
 
   return (
