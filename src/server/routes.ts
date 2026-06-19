@@ -130,7 +130,7 @@ export function createRoutes(ctx: ServerContext): RouteTable {
           file: p,
           waiters: s.waiters.length,
         }));
-        return Response.json({ files: status });
+        return Response.json({ pid: process.pid, files: status });
       },
     },
 
@@ -225,11 +225,7 @@ export function createRoutes(ctx: ServerContext): RouteTable {
 
     "/shutdown": {
       POST: async () => {
-        for (const [path] of ctx.allFiles()) {
-          try {
-            await ctx.flush(path);
-          } catch {}
-        }
+        await ctx.flushAll();
         ctx.onShutdown?.();
         return Response.json({ ok: true });
       },

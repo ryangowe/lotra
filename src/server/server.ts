@@ -17,9 +17,26 @@ export async function startServer() {
   });
 
   let idleTimer: ReturnType<typeof setTimeout> | null = null;
+  let server: ReturnType<typeof Bun.serve>;
+
+  async function shutdown({ exit = false } = {}) {
+    if (idleTimer) clearTimeout(idleTimer);
+    await store.flushAll();
+    store.drainWaiters();
+    try {
+      unlinkSync(PORT_FILE);
+    } catch {}
+    if (exit) {
+      server?.stop(true);
+      process.exit(0);
+    } else {
+      server?.stop();
+    }
+  }
+
   function resetIdle() {
     if (idleTimer) clearTimeout(idleTimer);
-    idleTimer = setTimeout(() => process.exit(0), IDLE_TIMEOUT_MS);
+    idleTimer = setTimeout(() => shutdown({ exit: true }), IDLE_TIMEOUT_MS);
   }
 
   function wrap(handler: (req: Request) => Promise<Response>) {
@@ -34,16 +51,11 @@ export async function startServer() {
     };
   }
 
-  let server: ReturnType<typeof Bun.serve>;
-
   const raw = createRoutes({
     ...store,
     genId: () => "c" + crypto.randomUUID().slice(0, 7),
     fileExists: (p: string) => Bun.file(p).exists(),
-    onShutdown: () => {
-      server.stop(true);
-      process.exit(0);
-    },
+    onShutdown: () => shutdown(),
   });
 
   const routes: Record<
@@ -77,6 +89,7 @@ export async function startServer() {
 
   const serveConfig = {
     hostname: "127.0.0.1",
+    idleTimeout: 0,
     routes: {
       ...viewRoutes,
       "/favicon.ico": new Response(null, { status: 204 }),
@@ -98,20 +111,16 @@ export async function startServer() {
   await Bun.write(PORT_FILE, String(server.port));
   resetIdle();
 
-  function cleanup() {
+  process.on("SIGHUP", () => {});
+  for (const sig of ["SIGINT", "SIGTERM"] as const) {
+    process.on(sig, () => shutdown({ exit: true }));
+  }
+  // Fallback for uncaught exceptions — shutdown() handles normal exits
+  process.on("exit", () => {
     try {
       unlinkSync(PORT_FILE);
     } catch {}
-  }
-  process.on("SIGINT", () => {
-    cleanup();
-    process.exit(0);
   });
-  process.on("SIGTERM", () => {
-    cleanup();
-    process.exit(0);
-  });
-  process.on("exit", cleanup);
 
   return server;
 }

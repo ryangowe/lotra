@@ -54,6 +54,7 @@ export async function ensureDaemon(): Promise<string> {
     stdin: "ignore",
     stdout: "ignore",
     stderr: "ignore",
+    detached: true,
   });
   proc.unref();
 

@@ -13,6 +13,8 @@ export interface DocStore {
   load(absPath: string): Promise<string>;
   setText(absPath: string, text: string): void;
   flush(absPath: string): Promise<void>;
+  flushAll(): Promise<void>;
+  drainWaiters(): void;
 }
 
 export interface DocStoreIo {
@@ -56,6 +58,20 @@ export function createStore(io: DocStoreIo): DocStore {
       if (f.text === null) return;
       await io.writeMd(absPath, f.text);
       f.text = null; // back to synced; next load re-reads disk
+    },
+
+    async flushAll() {
+      for (const [path] of files) {
+        try {
+          await this.flush(path);
+        } catch {}
+      }
+    },
+
+    drainWaiters() {
+      for (const [, file] of files) {
+        for (const w of file.waiters.splice(0)) w("");
+      }
     },
   };
 }
