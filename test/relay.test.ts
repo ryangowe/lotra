@@ -3,7 +3,7 @@ import { DOC } from "./fixtures.ts";
 import { withTmpDoc, post, type TmpDoc } from "./helpers.ts";
 
 const EXPECTED =
-  '<cite>猫是一种常见的家养动物,行踪难以预测。</cite>\n<comment id="c0">请改这里</comment>';
+  '<cite>\n猫是一种常见的家养动物,行踪难以预测。\n</cite>\n\n<comment id="c0">\n请改这里\n</comment>';
 
 async function seedComment(doc: TmpDoc) {
   await post(doc.routes, "/api/comment/add", {

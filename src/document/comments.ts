@@ -177,11 +177,12 @@ export function formatCommentsForStdout(
   return actionable
     .map((c) => {
       let cite = c.paragraphText;
-      if (cite.length > maxCiteLength) {
-        const half = Math.floor((maxCiteLength - 3) / 2);
-        cite = `${cite.slice(0, half)}...${cite.slice(-half)}`;
+      const lines = cite.split("\n");
+      if (cite.length > maxCiteLength && lines.length > 2) {
+        cite = `${lines[0]}\n...\n${lines[lines.length - 1]}`;
       }
-      return `<cite>${cite}</cite>\n<comment id="${c.id}">${c.body}</comment>`;
+      const citeInner = cite ? `\n${cite}\n` : "";
+      return `<cite>${citeInner}</cite>\n\n<comment id="${c.id}">\n${c.body}\n</comment>`;
     })
     .join("\n\n");
 }

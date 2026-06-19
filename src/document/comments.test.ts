@@ -351,13 +351,28 @@ describe("formatCommentsForStdout", () => {
     expect(output).not.toContain('<comment id="c2">');
   });
 
-  test("includes cite with paragraph text", () => {
+  test("wraps content with newlines inside xml tags", () => {
     const comments = extractComments(DOC_WITH_COMMENTS);
     const output = formatCommentsForStdout(comments);
-    expect(output).toContain("<cite>First paragraph here.</cite>");
+    expect(output).toContain("<cite>\nFirst paragraph here.\n</cite>");
+    expect(output).toContain('<comment id="c1">\n');
+    expect(output).toContain("\n</comment>");
   });
 
-  test("truncates long paragraph text", () => {
+  test("truncates multiline cite exceeding threshold to first and last line", () => {
+    const longPara = "line one\nline two\nline three\nline four";
+    const doc = `${longPara}
+
+> [!comment] id="c1" status="requested"
+> Fix.
+`;
+    const comments = extractComments(doc);
+    const output = formatCommentsForStdout(comments, 10);
+    const cite = output.match(/<cite>\n(.*?)\n<\/cite>/s)?.[1] ?? "";
+    expect(cite).toBe("line one\n...\nline four");
+  });
+
+  test("does not truncate when lines <= 2 even if over threshold", () => {
     const longPara = "A".repeat(200);
     const doc = `${longPara}
 
@@ -366,9 +381,8 @@ describe("formatCommentsForStdout", () => {
 `;
     const comments = extractComments(doc);
     const output = formatCommentsForStdout(comments, 50);
-    expect(output).toContain("...");
-    const cite = output.match(/<cite>(.*?)<\/cite>/s)?.[1] ?? "";
-    expect(cite.length).toBeLessThanOrEqual(50);
+    const cite = output.match(/<cite>\n(.*?)\n<\/cite>/s)?.[1] ?? "";
+    expect(cite).toBe(longPara);
   });
 
   test("returns empty string when no requested comments", () => {
