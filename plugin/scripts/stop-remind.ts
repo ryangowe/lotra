@@ -1,22 +1,31 @@
 #!/usr/bin/env bun
 // Stop hook: nudge the agent toward lotra when a reply is moderately long.
+// Writes the reply to a tmp file so the agent only needs to run one command.
 // additionalContext continues the turn once (stop_hook_active guards re-firing).
-import { readStopInput } from "./stop-input.ts";
+import { readStopInput, dumpForReview } from "./stop-input.ts";
 import { REMIND_LINES, GATE_LINES } from "./config.ts";
 
-const { lineCount, stopHookActive } = await readStopInput();
+const input = await readStopInput();
 
-if (stopHookActive || lineCount < REMIND_LINES || lineCount >= GATE_LINES) {
+if (
+  input.stopHookActive ||
+  input.lineCount < REMIND_LINES ||
+  input.lineCount >= GATE_LINES
+) {
   process.exit(0);
 }
+
+const file = await dumpForReview(input);
 
 console.log(
   JSON.stringify({
     hookSpecificOutput: {
       hookEventName: "Stop",
       additionalContext:
-        `That reply was ${lineCount} lines. If it is a document or long answer the human should review, ` +
-        "write it to a file and run `lotra relay <file>` to collect inline comments. Otherwise you may stop.",
+        `That reply was ${input.lineCount} lines and has been saved to ${file}. ` +
+        "If it needs human feedback, run `lotra relay " +
+        file +
+        "` to collect inline comments.",
     },
   }),
 );

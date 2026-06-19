@@ -26,3 +26,16 @@ export function parseStopInput(raw: string): StopInput {
 export async function readStopInput(): Promise<StopInput> {
   return parseStopInput(await Bun.stdin.text());
 }
+
+// Write the reply to a unique tmp file for lotra review.
+// Fresh path per dump dodges the daemon's in-memory cache.
+export async function dumpForReview(input: StopInput): Promise<string> {
+  const { mkdir } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const dir = join(tmpdir(), "lotra-review");
+  await mkdir(dir, { recursive: true });
+  const file = join(dir, `${input.sessionId}-${Date.now()}.md`);
+  await Bun.write(file, input.lastMessage);
+  return file;
+}
