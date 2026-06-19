@@ -1,6 +1,10 @@
 import type { Root, RootContent, Blockquote } from "mdast";
 import type { Comment, CommentStatus } from "../shared/types.ts";
-import { isCommentNode, serializeCommentNode } from "./remark-comment.ts";
+import {
+  isCommentNode,
+  isNonContentNode,
+  serializeCommentNode,
+} from "./remark-comment.ts";
 import { parser, stringifier } from "./parser.ts";
 
 function parse(markdown: string): Root {
@@ -56,7 +60,7 @@ export function extractComments(markdown: string): Comment[] {
     let paragraphText = "";
     for (let j = i - 1; j >= 0; j--) {
       const prev = tree.children[j]!;
-      if (isCommentNode(prev)) continue;
+      if (isNonContentNode(prev)) continue;
       paragraphText = getNodeText(prev);
       break;
     }
@@ -89,7 +93,7 @@ export function insertComment(
 
   for (let i = 0; i < tree.children.length; i++) {
     const node = tree.children[i]!;
-    if (isCommentNode(node)) continue;
+    if (isNonContentNode(node)) continue;
 
     if (count === blockIndex) {
       insertAfter = i;

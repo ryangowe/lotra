@@ -2,7 +2,7 @@ import { toHast } from "mdast-util-to-hast";
 import { toHtml } from "hast-util-to-html";
 import { toString } from "mdast-util-to-string";
 import type { Root, RootContent } from "mdast";
-import { isCommentNode } from "./remark-comment.ts";
+import { isCommentNode, isNonContentNode } from "./remark-comment.ts";
 import type { DocumentData, BlockData, CommentData } from "../shared/types.ts";
 import { parser, stringifier } from "./parser.ts";
 
@@ -42,23 +42,25 @@ export function getDocumentData(
   let index = 0;
 
   for (const node of tree.children) {
-    if (isCommentNode(node)) {
-      const children = node.children as RootContent[];
-      comments.push({
-        id: node.data.commentId,
-        blockIndex: index === 0 ? null : index - 1, // preceding block, or null if none
-        status: node.data.commentStatus,
-        body: childrenToMarkdown(children),
-        bodyHtml: childrenToHtml(children),
-      });
-    } else {
-      const heading =
-        node.type === "heading"
-          ? { depth: node.depth, text: toString(node) }
-          : null;
-      blocks.push({ index, html: nodeToHtml(node), heading });
-      index++;
+    if (isNonContentNode(node)) {
+      if (isCommentNode(node)) {
+        const children = node.children as RootContent[];
+        comments.push({
+          id: node.data.commentId,
+          blockIndex: index === 0 ? null : index - 1,
+          status: node.data.commentStatus,
+          body: childrenToMarkdown(children),
+          bodyHtml: childrenToHtml(children),
+        });
+      }
+      continue;
     }
+    const heading =
+      node.type === "heading"
+        ? { depth: node.depth, text: toString(node) }
+        : null;
+    blocks.push({ index, html: nodeToHtml(node), heading });
+    index++;
   }
 
   return { title: documentTitle(tree, filePath), blocks, comments };

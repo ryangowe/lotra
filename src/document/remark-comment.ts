@@ -66,6 +66,10 @@ export const remarkComment: Plugin<[], Root> = () => {
   };
 };
 
+export function isNonContentNode(node: RootContent): boolean {
+  return node.type === "yaml" || isCommentNode(node);
+}
+
 export function isCommentNode(node: RootContent): node is Blockquote & {
   data: { commentId: string; commentStatus: CommentStatus };
 } {

@@ -32,6 +32,16 @@ Second paragraph here.
 Third paragraph here.
 `;
 
+const DOC_WITH_FRONTMATTER = `---
+title: Hello
+date: 2026-01-01
+---
+
+# Hello
+
+Body text.
+`;
+
 describe("extractComments", () => {
   test("extracts all comments with metadata", () => {
     const comments = extractComments(DOC_WITH_COMMENTS);
@@ -192,6 +202,64 @@ describe("insertComment", () => {
     expect(() =>
       insertComment(result, 1, "c2", "requested", "Second comment."),
     ).toThrow("already has a comment");
+  });
+});
+
+describe("front matter handling", () => {
+  test("insertComment skips yaml node when counting blocks", () => {
+    const result = insertComment(
+      DOC_WITH_FRONTMATTER,
+      0,
+      "c1",
+      "requested",
+      "Fix title.",
+    );
+    const comments = extractComments(result);
+    expect(comments).toHaveLength(1);
+    expect(comments[0]!.paragraphText).toBe("# Hello");
+  });
+
+  test("insertComment targets correct block after front matter", () => {
+    const result = insertComment(
+      DOC_WITH_FRONTMATTER,
+      1,
+      "c1",
+      "requested",
+      "Fix body.",
+    );
+    const comments = extractComments(result);
+    expect(comments).toHaveLength(1);
+    expect(comments[0]!.paragraphText).toBe("Body text.");
+  });
+
+  test("extractComments does not use yaml node as paragraph text", () => {
+    const docWithCommentAfterFm = `---
+title: Hello
+---
+
+> [!comment] id="c1" status="requested"
+> Orphan note.
+
+# Hello
+`;
+    const comments = extractComments(docWithCommentAfterFm);
+    expect(comments).toHaveLength(1);
+    expect(comments[0]!.paragraphText).toBe("");
+  });
+
+  test("round-trips front matter through comment operations", () => {
+    const result = insertComment(
+      DOC_WITH_FRONTMATTER,
+      0,
+      "c1",
+      "requested",
+      "Fix title.",
+    );
+    expect(result).toContain("---\ntitle: Hello\ndate: 2026-01-01\n---");
+    const removed = removeComment(result, "c1");
+    expect(removed).toContain("---\ntitle: Hello\ndate: 2026-01-01\n---");
+    expect(removed).toContain("# Hello");
+    expect(removed).toContain("Body text.");
   });
 });
 

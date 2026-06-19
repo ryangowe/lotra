@@ -55,6 +55,26 @@ describe("getDocumentData", () => {
     ).toBeNull();
   });
 
+  test("strips YAML front matter from rendered output", () => {
+    const withFm = [
+      "---",
+      "title: Hello",
+      "date: 2026-01-01",
+      "---",
+      "",
+      "# Hello",
+      "",
+      "Body text.",
+    ].join("\n");
+    const { blocks, title } = getDocumentData("file.md", withFm);
+    expect(title).toBe("Hello");
+    const html = blocks.map((b) => b.html).join("");
+    expect(html).not.toContain("<hr");
+    expect(html).not.toContain("title:");
+    expect(html).not.toContain("date:");
+    expect(blocks).toHaveLength(2);
+  });
+
   test("renders GFM tables and strikethrough in block html", () => {
     const { blocks } = getDocumentData(
       "file.md",
