@@ -60,6 +60,13 @@ to mark the comments as resolved.
 You can of course still edit the markdown document itself,
 but never edit a comment callout directly.
 
+## Constraints
+
+- Never Write a file that contains comment callouts. Use Edit on prose paragraphs only; callout blocks belong to lotra.
+- `lotra relay` blocks until the user submits. Do not read the file while relay is running. If relay fails, report the error and wait for user instructions.
+- Always use the `lotra` CLI. If not found, install per the section below.
+- Resolve after editing: read comments → Edit prose → `lotra resolve`.
+
 ## Install
 
 If `lotra` is not found, install it:
