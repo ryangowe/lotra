@@ -2,6 +2,15 @@ name: Release
 
 on:
   workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version bump level"
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
 permissions:
   contents: read
@@ -18,10 +27,31 @@ jobs:
     needs: check
     runs-on: ubuntu-latest
     permissions:
-      contents: write # gh release create
+      contents: write # gh release create + push bump commit
       id-token: write # npm trusted publishing (OIDC)
     steps:
       - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+
+      - name: Bump version
+        run: |
+          bun scripts/bump-version.ts ${{ inputs.bump }}
+          VERSION="$(jq -r .version package.json)"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Commit version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json plugin/.claude-plugin/plugin.json
+          git commit -m "chore: bump version to $VERSION"
+          git push
+
       - uses: actions/setup-node@v6
         with:
           # node 24 provides npm >= 11.5.1, required for OIDC trusted publishing.
@@ -34,5 +64,4 @@ jobs:
       - env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION="$(jq -r .version package.json)"
-          gh release create "v$VERSION" --target "$GITHUB_SHA" --title "v$VERSION" --generate-notes
+          gh release create "v$VERSION" --target HEAD --title "v$VERSION" --generate-notes
