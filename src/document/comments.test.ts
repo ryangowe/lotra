@@ -344,9 +344,16 @@ describe("removeComment", () => {
 });
 
 describe("formatCommentsForStdout", () => {
-  test("formats only requested comments", () => {
+  test("formats requested as <comment> and notes as <note>", () => {
     const comments = extractComments(DOC_WITH_COMMENTS);
     const output = formatCommentsForStdout(comments);
+    expect(output).toContain('<comment id="c1">');
+    expect(output).toContain('<note id="c2">');
+  });
+
+  test("excludeNotes omits notes", () => {
+    const comments = extractComments(DOC_WITH_COMMENTS);
+    const output = formatCommentsForStdout(comments, { excludeNotes: true });
     expect(output).toContain('<comment id="c1">');
     expect(output).not.toContain("c2");
   });
@@ -355,25 +362,29 @@ describe("formatCommentsForStdout", () => {
     const comments = extractComments(DOC_WITH_COMMENTS);
     const output = formatCommentsForStdout(comments);
     const lines = output.split("\n");
-    for (const tag of ["<cite>", "</cite>", "</comment>"]) {
+    for (const tag of ["<cite>", "</cite>", "</comment>", "</note>"]) {
       const tagLines = lines.filter((l) => l.includes(tag));
       for (const line of tagLines) {
         expect(line.trim()).toBe(tag);
       }
     }
-    const commentOpenLines = lines.filter((l) => l.startsWith("<comment "));
-    for (const line of commentOpenLines) {
-      expect(line).toMatch(/^<comment .+>$/);
+    const openLines = lines.filter(
+      (l) => l.startsWith("<comment ") || l.startsWith("<note "),
+    );
+    for (const line of openLines) {
+      expect(line).toMatch(/^<(comment|note) .+>$/);
     }
   });
 
-  test("cite and comment body are between their tags", () => {
+  test("cite and body are between their tags", () => {
     const comments = extractComments(DOC_WITH_COMMENTS);
     const output = formatCommentsForStdout(comments);
     expect(output).toContain("<cite>\nFirst paragraph here.\n</cite>");
     expect(output).toContain(
       '<comment id="c1">\nThis data is **wrong**.\n</comment>',
     );
+    expect(output).toContain("<cite>\nSecond paragraph here.\n</cite>");
+    expect(output).toContain('<note id="c2">\nJust a hint.\n</note>');
   });
 
   test("truncates multiline cite exceeding threshold to first and last line", () => {
@@ -384,7 +395,7 @@ describe("formatCommentsForStdout", () => {
 > Fix.
 `;
     const comments = extractComments(doc);
-    const output = formatCommentsForStdout(comments, 10);
+    const output = formatCommentsForStdout(comments, { maxCiteLength: 10 });
     const cite = output.match(/<cite>\n(.*?)\n<\/cite>/s)?.[1] ?? "";
     expect(cite).toBe("line one\n...\nline four");
   });
@@ -397,7 +408,7 @@ describe("formatCommentsForStdout", () => {
 > Fix.
 `;
     const comments = extractComments(doc);
-    const output = formatCommentsForStdout(comments, 50);
+    const output = formatCommentsForStdout(comments, { maxCiteLength: 50 });
     const cite = output.match(/<cite>\n(.*?)\n<\/cite>/s)?.[1] ?? "";
     expect(cite).toBe(longPara);
   });
@@ -411,14 +422,25 @@ describe("formatCommentsForStdout", () => {
     expect(output).toContain("<cite>\n</cite>");
   });
 
-  test("returns empty string when no requested comments", () => {
+  test("returns empty string when no actionable comments", () => {
+    const doc = `Paragraph.
+
+> [!comment] id="c1" status="resolved"
+> Done.
+`;
+    const comments = extractComments(doc);
+    const output = formatCommentsForStdout(comments);
+    expect(output).toBe("");
+  });
+
+  test("returns empty string when only notes and excludeNotes is true", () => {
     const doc = `Paragraph.
 
 > [!comment] id="c1" status="note"
 > Just a note.
 `;
     const comments = extractComments(doc);
-    const output = formatCommentsForStdout(comments);
+    const output = formatCommentsForStdout(comments, { excludeNotes: true });
     expect(output).toBe("");
   });
 });

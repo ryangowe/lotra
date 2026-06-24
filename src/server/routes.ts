@@ -49,7 +49,9 @@ export function createRoutes(ctx: ServerContext): RouteTable {
         if (!absPath)
           return Response.json({ error: "missing file path" }, { status: 400 });
         const file = ctx.getFile(absPath);
-        const output = await new Promise<string>((r) => file.waiters.push(r));
+        const output = await new Promise<string>((resolve) =>
+          file.waiters.push({ resolve, excludeNotes: false }),
+        );
         return new Response(output, {
           headers: { "Content-Type": "text/plain; charset=utf-8" },
         });
@@ -64,11 +66,16 @@ export function createRoutes(ctx: ServerContext): RouteTable {
         const file = ctx.getFile(absPath);
 
         const md = await ctx.load(absPath);
-        const output = formatCommentsForStdout(extractComments(md));
+        const comments = extractComments(md);
         await ctx.flush(absPath);
 
         const waiters = file.waiters.splice(0);
-        for (const w of waiters) w(output);
+        for (const w of waiters)
+          w.resolve(
+            formatCommentsForStdout(comments, {
+              excludeNotes: w.excludeNotes,
+            }),
+          );
 
         return Response.json({ ok: true, notified: waiters.length });
       },
@@ -80,8 +87,12 @@ export function createRoutes(ctx: ServerContext): RouteTable {
         if (!absPath)
           return Response.json({ error: "missing file path" }, { status: 400 });
 
+        const excludeNotes =
+          new URL(req.url).searchParams.get("excludeNotes") === "true";
         const md = await ctx.load(absPath);
-        const output = formatCommentsForStdout(extractComments(md));
+        const output = formatCommentsForStdout(extractComments(md), {
+          excludeNotes,
+        });
         return new Response(output, {
           headers: { "Content-Type": "text/plain; charset=utf-8" },
         });

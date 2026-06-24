@@ -25,7 +25,10 @@ export function buildCli(connect: Connect = ensureDaemon): Command {
   program
     .command("handoff <file>")
     .description("output current comments to stdout")
-    .action((file: string) => handleHandoff(connect, file));
+    .option("--exclude-notes", "exclude notes from output")
+    .action((file: string, opts: { excludeNotes?: boolean }) =>
+      handleHandoff(connect, file, opts.excludeNotes),
+    );
 
   program
     .command("resolve <file> <ids...>")
@@ -90,7 +93,6 @@ async function handleRelay(connect: Connect, file: string) {
   }
   openBrowser(fileUrl(daemonUrl, "/view", absFile));
 
-  // Bun's fetch has a 300s default timeout; attach blocks until user submits.
   const res = await fetch(fileUrl(daemonUrl, "/attach", absFile), {
     method: "POST",
     signal: new AbortController().signal,
@@ -104,10 +106,16 @@ async function handleRelay(connect: Connect, file: string) {
   if (output) process.stdout.write(output + "\n");
 }
 
-async function handleHandoff(connect: Connect, file: string) {
+async function handleHandoff(
+  connect: Connect,
+  file: string,
+  excludeNotes?: boolean,
+) {
   const daemonUrl = await connect();
   const absFile = resolve(file);
-  const res = await fetch(fileUrl(daemonUrl, "/handoff", absFile));
+  let handoffUrl = fileUrl(daemonUrl, "/handoff", absFile);
+  if (excludeNotes) handoffUrl += "&excludeNotes=true";
+  const res = await fetch(handoffUrl);
   if (!res.ok) {
     const data = (await res.json()) as Record<string, any>;
     console.error(`Error: ${data.error}`);

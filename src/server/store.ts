@@ -1,7 +1,12 @@
 // Copy-on-write against disk: a file is "synced" until edited, then forks an
 // in-memory working copy; flush writes the copy back and returns to synced.
+export interface Waiter {
+  resolve: (output: string) => void;
+  excludeNotes: boolean;
+}
+
 export interface FileState {
-  waiters: Array<(output: string) => void>;
+  waiters: Waiter[];
   // null when synced; the in-memory working copy when edited but not yet flushed.
   text: string | null;
 }
@@ -70,7 +75,7 @@ export function createStore(io: DocStoreIo): DocStore {
 
     drainWaiters() {
       for (const [, file] of files) {
-        for (const w of file.waiters.splice(0)) w("");
+        for (const w of file.waiters.splice(0)) w.resolve("");
       }
     },
   };

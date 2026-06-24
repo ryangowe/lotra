@@ -167,11 +167,22 @@ export function removeComment(markdown: string, id: string): string {
   return stringify(tree);
 }
 
+export interface FormatOptions {
+  excludeNotes?: boolean;
+  maxCiteLength?: number;
+}
+
 export function formatCommentsForStdout(
   comments: Comment[],
-  maxCiteLength = 120,
+  options: FormatOptions = {},
 ): string {
-  const actionable = comments.filter((c) => c.status === "requested");
+  const { excludeNotes = false, maxCiteLength = 120 } = options;
+
+  const actionable = comments.filter((c) => {
+    if (c.status === "requested") return true;
+    if (c.status === "note" && !excludeNotes) return true;
+    return false;
+  });
   if (actionable.length === 0) return "";
 
   return actionable
@@ -185,11 +196,12 @@ export function formatCommentsForStdout(
       if (cite) citeParts.push(cite);
       citeParts.push("</cite>");
 
-      const commentParts = [`<comment id="${c.id}">`];
-      if (c.body) commentParts.push(c.body);
-      commentParts.push("</comment>");
+      const tag = c.status === "note" ? "note" : "comment";
+      const bodyParts = [`<${tag} id="${c.id}">`];
+      if (c.body) bodyParts.push(c.body);
+      bodyParts.push(`</${tag}>`);
 
-      return [...citeParts, "", ...commentParts].join("\n");
+      return [...citeParts, "", ...bodyParts].join("\n");
     })
     .join("\n\n");
 }

@@ -15,29 +15,40 @@ Usage: lotra [options] [command] [file]
 Long Text Review and Annotate
 
 Arguments:
-  file                     open file in browser
+  file                      open file in browser
 
 Options:
-  -h, --help               display help for command
+  -h, --help                display help for command
 
 Commands:
-  review <file>            wait for user comments, output to stdout
-  handoff <file>           output current comments to stdout
-  resolve <file> <ids...>  mark comments as resolved
-  status                   show open files
-  restart                  restart the daemon
-  prompt                   print agent instructions to stdout
-  prettier <file>          split multi-item lists into single-item lists
+  review <file>             wait for user comments, output to stdout
+  handoff [options] <file>  output current comments to stdout
+  resolve <file> <ids...>   mark comments as resolved
+  status                    show open files
+  restart                   restart the daemon
+  prompt                    print agent instructions to stdout
+  prettier <file>           split multi-item lists into single-item lists
 ```
 
+`handoff` accepts `--exclude-notes` to omit notes from output.
+
 ## Workflow
+
+lotra is one way to exchange information with the user. Combine it with your other workflows as appropriate.
+
+- Treat comments like regular user input — read, think, then decide how to act.
+- Don't funnel all communication through the document — reply directly when that fits better.
+- Don't treat lotra review as a gate that blocks all other work — act on what's clear while clarifying the rest.
 
 ### Request feedback
 
 Use `bun x @ryangowe/lotra review "<file>"` to open the markdown document in the browser
 and block, waiting for the user's feedback.
 
-The command returns the user's comments, along with the content those comments refer to.
+The command returns the user's feedback in two types:
+
+- `<comment>` — the user wants you to act on this: modify, explain, or respond.
+- `<note>` — informational; context the user provides for your awareness, no action required.
 
 ### Read comments
 
