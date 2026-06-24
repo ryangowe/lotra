@@ -23,7 +23,7 @@ console.log(
       hookEventName: "Stop",
       additionalContext:
         `That reply was ${input.lineCount} lines and has been saved to ${file}. ` +
-        "If it needs human feedback, run `lotra relay " +
+        "If it needs human feedback, run `lotra review " +
         file +
         "` to collect inline comments.",
     },

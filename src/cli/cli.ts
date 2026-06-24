@@ -17,7 +17,7 @@ export function buildCli(connect: Connect = ensureDaemon): Command {
     });
 
   program
-    .command("relay <file>")
+    .command("review <file>")
     .description("wait for user comments, output to stdout")
     .action((file: string) => handleRelay(connect, file));
 

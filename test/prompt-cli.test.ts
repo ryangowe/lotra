@@ -15,6 +15,6 @@ test("readPrompt returns the skill body without frontmatter", async () => {
   const body = await readPrompt();
   expect(body.startsWith("# Review long output with lotra")).toBe(true);
   expect(body).not.toContain("description:");
-  expect(body).toContain("lotra relay");
+  expect(body).toContain("lotra review");
   expect(body.endsWith("\n")).toBe(true);
 });

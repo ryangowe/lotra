@@ -9,7 +9,7 @@ Reviewing long LLM-generated documents is painful in a terminal. LoTRA renders t
 ```
 agent writes doc.md
   → lotra ./doc.md              # open in browser
-  → lotra relay ./doc.md        # block until user submits
+  → lotra review ./doc.md       # block until user submits
   ← structured comments on stdout
   → agent rewrites based on feedback
   → lotra resolve doc.md c1 c2  # mark comments resolved
@@ -29,7 +29,7 @@ Comments are stored as GFM callout blocks inline in the markdown file:
 lotra ./doc.md
 
 # Block until user submits comments (structured output on stdout)
-lotra relay ./doc.md
+lotra review ./doc.md
 
 # Read current comments without blocking
 lotra handoff ./doc.md
@@ -45,7 +45,7 @@ lotra status
 
 | Status      | Meaning                                                |
 | ----------- | ------------------------------------------------------ |
-| `requested` | Changes requested (included in relay/handoff output)   |
+| `requested` | Changes requested (included in review/handoff output)  |
 | `note`      | Informational hint (agent must read the file directly) |
 | `resolved`  | Addressed (folded in browser)                          |
 

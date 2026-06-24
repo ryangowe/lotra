@@ -21,7 +21,7 @@ Options:
   -h, --help               display help for command
 
 Commands:
-  relay <file>             wait for user comments, output to stdout
+  review <file>            wait for user comments, output to stdout
   handoff <file>           output current comments to stdout
   resolve <file> <ids...>  mark comments as resolved
   status                   show open files
@@ -33,7 +33,7 @@ Commands:
 
 ### Request feedback
 
-`lotra relay <file>` is the rich equivalent of AskUserQuestion: it opens the document in the browser and blocks until the user submits inline comments. Use it whenever:
+`lotra review <file>` is the rich equivalent of AskUserQuestion: it opens the document in the browser and blocks until the user submits inline comments. Use it whenever:
 
 - You need feedback on a document, spec, plan, or long answer.
 - You have multiple questions or decision points — lotra lets the user comment on each in context, whereas AskUserQuestion is limited to 4 standalone questions.
@@ -66,7 +66,7 @@ but never edit a comment callout directly.
 ## Constraints
 
 - Never Write a file that contains comment callouts. Use Edit on prose paragraphs only; callout blocks belong to lotra.
-- `lotra relay` blocks until the user submits. Do not read the file while relay is running. If relay fails, report the error and wait for user instructions.
+- `lotra review` blocks until the user submits. Do not read the file while review is running. If review fails, report the error and wait for user instructions.
 - Always use the `lotra` CLI. If not found, install per the section below.
 - Resolve after editing: read comments → Edit prose → `lotra resolve`.
 

@@ -1,7 +1,7 @@
 {
   "name": "@ryangowe/lotra",
   "version": "0.1.3",
-  "description": "Long Text Review and Annotate — review markdown in the browser, relay comments back to your agent",
+  "description": "Long Text Review and Annotate — review markdown in the browser, return comments to your agent",
   "license": "MIT",
   "author": "ryangowe",
   "repository": {

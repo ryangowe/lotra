@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-// Stop hook (asyncRewake): on a long reply, dump it outside the project and relay
+// Stop hook (asyncRewake): on a long reply, dump it outside the project and route
 // human review back to the agent. Runs in the background so the turn is not held.
 import { readStopInput, dumpForReview } from "./stop-input.ts";
 import { lotraPackage } from "./lotra-cli.ts";
@@ -13,9 +13,9 @@ const file = await dumpForReview(input);
 
 // Pin the CLI to this plugin's version so the hook and the published CLI never drift.
 // `bun x` fetches it on demand; a missing/offline/unpublished version yields empty
-// stdout and degrades to a no-op. lotra relay opens the browser and blocks until the
+// stdout and degrades to a no-op. lotra review opens the browser and blocks until the
 // human submits comments.
-const proc = Bun.spawn(["bun", "x", await lotraPackage(), "relay", file], {
+const proc = Bun.spawn(["bun", "x", await lotraPackage(), "review", file], {
   stdout: "pipe",
   stderr: "ignore",
 });
