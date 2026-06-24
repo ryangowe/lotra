@@ -62,6 +62,17 @@ to mark the comments as resolved.
 You can of course still edit the markdown document itself,
 but never edit a comment callout directly.
 
+## Dump, prettify, and review
+
+When routing long output through lotra (not an existing project file):
+
+1. **Dump**: Write the markdown to the Scratchpad Directory. Never write temporary review files into the project directory.
+2. **Prettify**: Run `bun x @ryangowe/lotra prettier <file>` to split complex lists into single-item blocks.
+3. **Review**: Run `bun x @ryangowe/lotra review <file>` to open the file in the browser and wait for user comments.
+
+When reviewing an existing project file (a spec, a doc, etc.),
+skip the dump step and use the file in place.
+
 ## Constraints
 
 - Never Write a file that contains comment callouts. Use Edit on prose paragraphs only; callout blocks belong to lotra.
