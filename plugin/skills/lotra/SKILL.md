@@ -34,7 +34,7 @@ Commands:
 
 ### Request feedback
 
-Use `bun x @ryangowe/lotra review <file>` to open the markdown document in the browser
+Use `bun x @ryangowe/lotra review "<file>"` to open the markdown document in the browser
 and block, waiting for the user's feedback.
 
 The command returns the user's comments, along with the content those comments refer to.
@@ -44,7 +44,7 @@ The command returns the user's comments, along with the content those comments r
 For a document that has gone through the lotra flow, this is another way to get feedback.
 
 You can read the user's feedback in the markdown document at any time
-with `bun x @ryangowe/lotra handoff <file>`.
+with `bun x @ryangowe/lotra handoff "<file>"`.
 
 ### Read the document directly
 
@@ -62,7 +62,7 @@ For persistent documents (specs, design docs, project files) that go through
 multiple rounds of review, track comments with resolve:
 
 After you have addressed the concerns based on the user's comments,
-use `bun x @ryangowe/lotra resolve <file> <id...>`
+use `bun x @ryangowe/lotra resolve "<file>" <id...>`
 to mark the comments as resolved.
 
 You can edit the markdown document itself,
@@ -73,8 +73,8 @@ but never edit a comment callout directly.
 When routing long output through lotra (not an existing project file):
 
 1. **Dump**: Write the markdown to the Scratchpad Directory. Never write temporary review files into the project directory.
-2. **Prettify**: Run `bun x @ryangowe/lotra prettier <file>` to split complex lists into single-item blocks.
-3. **Review**: Run `bun x @ryangowe/lotra review <file>` to open the file in the browser and wait for user comments.
+2. **Prettify**: Run `bun x @ryangowe/lotra prettier "<file>"` to split complex lists into single-item blocks.
+3. **Review**: Run `bun x @ryangowe/lotra review "<file>"` to open the file in the browser and wait for user comments.
 
 When reviewing an existing project file (a spec, a doc, etc.),
 skip the dump step and use the file in place.
@@ -84,4 +84,4 @@ skip the dump step and use the file in place.
 - Never Write a file that contains comment callouts. Use Edit on prose paragraphs only; callout blocks belong to lotra.
 - `bun x @ryangowe/lotra review` blocks until the user submits. Do not read the file while review is running. If review fails, report the error and wait for user instructions.
 - Always use `bun x @ryangowe/lotra`. If not found, run `bun install -g @ryangowe/lotra` first.
-- Resolve after editing: read comments → Edit prose → `bun x @ryangowe/lotra resolve`.
+- Resolve after editing: read comments → Edit prose → `bun x @ryangowe/lotra resolve "<file>"`.
