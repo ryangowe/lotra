@@ -2,7 +2,7 @@ import { toHast } from "mdast-util-to-hast";
 import { toHtml } from "hast-util-to-html";
 import { toString } from "mdast-util-to-string";
 import type { Root, RootContent } from "mdast";
-import { isCommentNode, isNonContentNode } from "./remark-comment.ts";
+import { analyze, blockContentNode } from "./blocks.ts";
 import type { DocumentData, BlockData, CommentData } from "../shared/types.ts";
 import { parser, stringifier } from "./parser.ts";
 
@@ -17,8 +17,7 @@ function childrenToHtml(children: RootContent[]): string {
 }
 
 function childrenToMarkdown(children: RootContent[]): string {
-  const tree: Root = { type: "root", children };
-  return stringifier.stringify(tree).trim();
+  return stringifier.stringify({ type: "root", children }).trim();
 }
 
 function documentTitle(tree: Root, fallback: string): string {
@@ -36,32 +35,27 @@ export function getDocumentData(
   markdown: string,
 ): DocumentData {
   const tree = parser.runSync(parser.parse(markdown)) as Root;
+  const { blocks: blockEntries, comments: commentEntries } = analyze(tree);
 
-  const blocks: BlockData[] = [];
-  const comments: CommentData[] = [];
-  let index = 0;
-
-  for (const node of tree.children) {
-    if (isNonContentNode(node)) {
-      if (isCommentNode(node)) {
-        const children = node.children as RootContent[];
-        comments.push({
-          id: node.data.commentId,
-          blockIndex: index === 0 ? null : index - 1,
-          status: node.data.commentStatus,
-          body: childrenToMarkdown(children),
-          bodyHtml: childrenToHtml(children),
-        });
-      }
-      continue;
-    }
+  const blocks: BlockData[] = blockEntries.map((entry, index) => {
+    const node = blockContentNode(entry);
     const heading =
       node.type === "heading"
         ? { depth: node.depth, text: toString(node) }
         : null;
-    blocks.push({ index, html: nodeToHtml(node), heading });
-    index++;
-  }
+    return { index, html: nodeToHtml(node), heading };
+  });
+
+  const comments: CommentData[] = commentEntries.map((c) => {
+    const children = [...c.node.children] as RootContent[];
+    return {
+      id: c.node.data.commentId,
+      blockIndex: c.blockIndex,
+      status: c.node.data.commentStatus,
+      body: childrenToMarkdown(children),
+      bodyHtml: childrenToHtml(children),
+    };
+  });
 
   return { title: documentTitle(tree, filePath), blocks, comments };
 }

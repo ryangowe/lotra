@@ -1,19 +1,23 @@
 import type { Root, RootContent, Blockquote } from "mdast";
 import type { Comment, CommentStatus } from "../shared/types.ts";
 import {
-  isCommentNode,
-  isNonContentNode,
-  serializeCommentNode,
-} from "./remark-comment.ts";
+  analyze,
+  blockContentNode,
+  blockHasComment,
+  attachComment,
+} from "./blocks.ts";
 import { parser, stringifier } from "./parser.ts";
 
 function parse(markdown: string): Root {
   return parser.runSync(parser.parse(markdown));
 }
 
-function stringifyChildren(node: Blockquote): string {
-  const bodyTree: Root = { type: "root", children: [...node.children] };
-  return stringifier.stringify(bodyTree).trim();
+function nodeToMarkdown(node: RootContent): string {
+  return stringifier.stringify({ type: "root", children: [node] }).trim();
+}
+
+function childrenToMarkdown(children: RootContent[]): string {
+  return stringifier.stringify({ type: "root", children }).trim();
 }
 
 function parseBodyChildren(body: string): Blockquote["children"] {
@@ -21,28 +25,11 @@ function parseBodyChildren(body: string): Blockquote["children"] {
   return parse(body).children as Blockquote["children"];
 }
 
+// One whole-tree pass: comment callouts (top-level or nested in a list item) are
+// emitted by the stringifier's blockquote handler, and adjacent content keeps the
+// spacing and list markers the serializer chooses with full sibling context.
 function stringify(tree: Root): string {
-  const out: string[] = [];
-  for (const node of tree.children) {
-    if (isCommentNode(node)) {
-      out.push(
-        serializeCommentNode(
-          node.data.commentId,
-          node.data.commentStatus,
-          stringifyChildren(node),
-        ),
-      );
-    } else {
-      const wrapper: Root = { type: "root", children: [node] };
-      out.push(stringifier.stringify(wrapper).trimEnd());
-    }
-  }
-  return out.join("\n\n") + "\n";
-}
-
-function getNodeText(node: RootContent): string {
-  const tree: Root = { type: "root", children: [node] };
-  return stringifier.stringify(tree).trim();
+  return stringifier.stringify(tree).trimEnd() + "\n";
 }
 
 export function normalizeMarkdown(input: string): string {
@@ -51,32 +38,15 @@ export function normalizeMarkdown(input: string): string {
 
 export function extractComments(markdown: string): Comment[] {
   const tree = parse(markdown);
-  const comments: Comment[] = [];
+  const { blocks, comments } = analyze(tree);
+  const cites = blocks.map((b) => nodeToMarkdown(blockContentNode(b)));
 
-  for (let i = 0; i < tree.children.length; i++) {
-    const node = tree.children[i]!;
-    if (!isCommentNode(node)) continue;
-
-    let paragraphText = "";
-    for (let j = i - 1; j >= 0; j--) {
-      const prev = tree.children[j]!;
-      if (isNonContentNode(prev)) continue;
-      paragraphText = getNodeText(prev);
-      break;
-    }
-
-    const bodyTree: Root = { type: "root", children: [...node.children] };
-    const body = stringifier.stringify(bodyTree).trim();
-
-    comments.push({
-      id: node.data.commentId,
-      status: node.data.commentStatus,
-      body,
-      paragraphText,
-    });
-  }
-
-  return comments;
+  return comments.map((c) => ({
+    id: c.node.data.commentId,
+    status: c.node.data.commentStatus,
+    body: childrenToMarkdown([...c.node.children]),
+    paragraphText: c.blockIndex === null ? "" : (cites[c.blockIndex] ?? ""),
+  }));
 }
 
 export function insertComment(
@@ -87,38 +57,20 @@ export function insertComment(
   body: string,
 ): string {
   const tree = parse(markdown);
+  const entry = analyze(tree).blocks[blockIndex];
 
-  let count = 0;
-  let insertAfter = -1;
-
-  for (let i = 0; i < tree.children.length; i++) {
-    const node = tree.children[i]!;
-    if (isNonContentNode(node)) continue;
-
-    if (count === blockIndex) {
-      insertAfter = i;
-      if (
-        insertAfter + 1 < tree.children.length &&
-        isCommentNode(tree.children[insertAfter + 1]!)
-      ) {
-        throw new Error(`Block ${blockIndex} already has a comment`);
-      }
-      break;
-    }
-    count++;
-  }
-
-  if (insertAfter === -1) {
+  if (!entry) {
     throw new Error(`Block index ${blockIndex} out of range`);
   }
+  if (blockHasComment(entry)) {
+    throw new Error(`Block ${blockIndex} already has a comment`);
+  }
 
-  const calloutNode: Blockquote = {
+  attachComment(entry, {
     type: "blockquote",
     data: { commentId: id, commentStatus: status },
     children: parseBodyChildren(body),
-  };
-
-  tree.children.splice(insertAfter + 1, 0, calloutNode);
+  });
 
   return stringify(tree);
 }
@@ -131,8 +83,8 @@ export function updateCommentStatus(
   const tree = parse(markdown);
   const idSet = new Set(ids);
 
-  for (const node of tree.children) {
-    if (isCommentNode(node) && idSet.has(node.data.commentId)) {
+  for (const { node } of analyze(tree).comments) {
+    if (idSet.has(node.data.commentId)) {
       node.data.commentStatus = newStatus;
     }
   }
@@ -147,8 +99,8 @@ export function editCommentBody(
 ): string {
   const tree = parse(markdown);
 
-  for (const node of tree.children) {
-    if (isCommentNode(node) && node.data.commentId === id) {
+  for (const { node } of analyze(tree).comments) {
+    if (node.data.commentId === id) {
       node.children = parseBodyChildren(newBody);
       break;
     }
@@ -160,9 +112,9 @@ export function editCommentBody(
 export function removeComment(markdown: string, id: string): string {
   const tree = parse(markdown);
 
-  tree.children = tree.children.filter((node) => {
-    return !isCommentNode(node) || node.data.commentId !== id;
-  });
+  for (const c of analyze(tree).comments) {
+    if (c.node.data.commentId === id) c.detach();
+  }
 
   return stringify(tree);
 }

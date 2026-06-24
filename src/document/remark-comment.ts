@@ -1,6 +1,7 @@
 import type { Root, Blockquote, RootContent } from "mdast";
 import type { Plugin } from "unified";
 import { visit, SKIP } from "unist-util-visit";
+import { defaultHandlers, type Handle } from "mdast-util-to-markdown";
 import { COMMENT_STATUSES, type CommentStatus } from "../shared/types.ts";
 
 declare module "mdast" {
@@ -66,13 +67,11 @@ export const remarkComment: Plugin<[], Root> = () => {
   };
 };
 
-export function isNonContentNode(node: RootContent): boolean {
-  return node.type === "yaml" || isCommentNode(node);
-}
-
-export function isCommentNode(node: RootContent): node is Blockquote & {
+export type CommentNode = Blockquote & {
   data: { commentId: string; commentStatus: CommentStatus };
-} {
+};
+
+export function isCommentNode(node: RootContent): node is CommentNode {
   return (
     node.type === "blockquote" &&
     typeof node.data?.commentId === "string" &&
@@ -84,15 +83,28 @@ export function buildCalloutHeader(id: string, status: CommentStatus): string {
   return `[!comment] id="${id}" status="${status}"`;
 }
 
-export function serializeCommentNode(
-  id: string,
-  status: CommentStatus,
-  bodyMarkdown: string,
-): string {
-  const header = buildCalloutHeader(id, status);
-  const content = bodyMarkdown ? `${header}\n${bodyMarkdown}` : header;
-  return content
-    .split("\n")
-    .map((l) => (l ? `> ${l}` : ">"))
-    .join("\n");
-}
+// remark-stringify handler that emits comment callouts as `> [!comment] ...`,
+// re-attaching the header that remarkComment stripped into `node.data`. Regular
+// blockquotes fall back to the default. Serializing the whole tree through this
+// handler keeps comments correct wherever they sit — including nested inside a
+// list item, where `state` supplies the list's indentation.
+export const commentBlockquoteHandler: Handle = (node, parent, state, info) => {
+  if (!isCommentNode(node)) {
+    return defaultHandlers.blockquote(node, parent, state, info);
+  }
+  const exit = state.enter("blockquote");
+  const tracker = state.createTracker(info);
+  tracker.move("> ");
+  tracker.shift(2);
+  const header = buildCalloutHeader(
+    node.data.commentId,
+    node.data.commentStatus,
+  );
+  const body = state.containerFlow(node, tracker.current());
+  const content = body ? `${header}\n${body}` : header;
+  const value = state.indentLines(content, (line, _, blank) =>
+    blank ? ">" : `> ${line}`,
+  );
+  exit();
+  return value;
+};

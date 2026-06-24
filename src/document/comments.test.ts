@@ -117,17 +117,15 @@ describe("extractComments", () => {
     expect(comments[0]!.paragraphText).toBe("# My Heading");
   });
 
-  test("captures list text when comment follows a list", () => {
+  test("cites the single list item a comment is anchored to", () => {
     const doc = `- Item A
 - Item B
-
-> [!comment] id="c1" status="requested"
-> Fix the list.
 `;
-    const comments = extractComments(doc);
+    const withComment = insertComment(doc, 0, "c1", "requested", "Fix this.");
+    const comments = extractComments(withComment);
     expect(comments).toHaveLength(1);
-    expect(comments[0]!.paragraphText).toContain("Item A");
-    expect(comments[0]!.paragraphText).toContain("Item B");
+    expect(comments[0]!.paragraphText).toBe("- Item A");
+    expect(comments[0]!.paragraphText).not.toContain("Item B");
   });
 });
 
@@ -201,6 +199,32 @@ describe("insertComment", () => {
     );
     expect(() =>
       insertComment(result, 1, "c2", "requested", "Second comment."),
+    ).toThrow("already has a comment");
+  });
+
+  test("nests a comment in the target list item and keeps the list whole", () => {
+    const listDoc = `1. First\n2. Second\n3. Third\n`;
+    const result = insertComment(listDoc, 1, "c1", "requested", "Fix second.");
+
+    // The callout is nested under "2. Second", not a sibling that splits the list.
+    expect(result).toContain('   > [!comment] id="c1" status="requested"');
+    expect(result).toContain("1. First");
+    expect(result).toContain("3. Third");
+
+    const comments = extractComments(result);
+    expect(comments).toHaveLength(1);
+    expect(comments[0]!.paragraphText).toBe("2. Second");
+
+    // A second comment on another item coexists; the list never collapses.
+    const both = insertComment(result, 2, "c2", "note", "Fix third.");
+    expect(extractComments(both)).toHaveLength(2);
+  });
+
+  test("a second comment on the same list item is rejected", () => {
+    const listDoc = `- Only item\n`;
+    const result = insertComment(listDoc, 0, "c1", "requested", "First.");
+    expect(() =>
+      insertComment(result, 0, "c2", "requested", "Second."),
     ).toThrow("already has a comment");
   });
 });
@@ -334,6 +358,22 @@ describe("removeComment", () => {
     const result = removeComment(DOC_WITH_COMMENTS, "c1");
     expect(result).toContain("First paragraph");
     expect(result).toContain("Second paragraph");
+  });
+
+  test("removes a comment nested inside a list item, leaving the list whole", () => {
+    const doc = `- Item A\n- Item B\n`;
+    const withComments = insertComment(
+      insertComment(doc, 0, "c1", "requested", "Fix A."),
+      1,
+      "c2",
+      "note",
+      "Fix B.",
+    );
+    const result = removeComment(withComments, "c1");
+    const comments = extractComments(result);
+    expect(comments).toHaveLength(1);
+    expect(comments[0]!.id).toBe("c2");
+    expect(comments[0]!.paragraphText).toBe("- Item B");
   });
 
   test("no-op for nonexistent id", () => {

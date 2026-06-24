@@ -12,11 +12,6 @@ if (input.lineCount < GATE_LINES) process.exit(0);
 const file = await dumpForReview(input);
 const pkg = await lotraPackage();
 
-await Bun.spawn(["bun", "x", pkg, "prettier", file], {
-  stdout: "ignore",
-  stderr: "ignore",
-}).exited;
-
 const proc = Bun.spawn(["bun", "x", pkg, "review", file], {
   stdout: "pipe",
   stderr: "ignore",

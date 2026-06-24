@@ -98,7 +98,8 @@ test("/api/document returns h1 title, indexed blocks, and anchored comments", as
   const data = await res.json();
 
   expect(data.title).toBe("关于猫的报告");
-  expect(data.blocks.length).toBe(7);
+  // 0 h1, 1 para, 2 h2, 3-4 the two list items, 5 table, 6 code, 7 para.
+  expect(data.blocks.length).toBe(8);
   expect(data.blocks[0].heading).toEqual({ depth: 1, text: "关于猫的报告" });
   expect(data.comments[0].blockIndex).toBe(1);
 });

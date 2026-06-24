@@ -1,5 +1,44 @@
 import { test, expect, describe } from "bun:test";
 import { getDocumentData } from "./render.ts";
+import { insertComment } from "./comments.ts";
+
+describe("list items as blocks", () => {
+  const listDoc = [
+    "Intro.",
+    "",
+    "1. First",
+    "2. Second",
+    "3. Third",
+    "",
+    "Outro.",
+  ].join("\n");
+
+  test("expands each list item into its own block, preserving the ordinal", () => {
+    const { blocks } = getDocumentData("f.md", listDoc);
+    expect(blocks).toHaveLength(5); // intro, three items, outro
+    expect(blocks[1]?.html).toContain("<li>First</li>");
+    expect(blocks[2]?.html).toContain('start="2"');
+    expect(blocks[3]?.html).toContain('start="3"');
+  });
+
+  test("anchors a comment nested in a list item to that item's block", () => {
+    const withComment = insertComment(listDoc, 2, "c1", "requested", "fix");
+    const { blocks, comments } = getDocumentData("f.md", withComment);
+    expect(blocks).toHaveLength(5);
+    expect(comments).toHaveLength(1);
+    expect(comments[0]?.blockIndex).toBe(2);
+  });
+
+  // A comment is additive: adding one must never change the non-comment block
+  // count, at any anchor.
+  test("adding a comment never changes the non-comment block count", () => {
+    const before = getDocumentData("f.md", listDoc).blocks.length;
+    for (let i = 0; i < before; i++) {
+      const withComment = insertComment(listDoc, i, "c", "requested", "x");
+      expect(getDocumentData("f.md", withComment).blocks.length).toBe(before);
+    }
+  });
+});
 
 describe("getDocumentData", () => {
   const md = [

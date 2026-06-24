@@ -2,7 +2,6 @@ import { resolve } from "node:path";
 import { Command } from "commander";
 import { ensureDaemon, restartDaemon } from "../server/daemon.ts";
 import { readPrompt } from "./prompt.ts";
-import { prettify } from "../document/prettier.ts";
 
 // Invoked lazily inside each handler, so daemon-free commands (prompt, help) never spawn it.
 type Connect = () => Promise<string>;
@@ -49,11 +48,6 @@ export function buildCli(connect: Connect = ensureDaemon): Command {
     .command("prompt")
     .description("print agent instructions to stdout")
     .action(() => handlePrompt());
-
-  program
-    .command("prettier <file>")
-    .description("split multi-item lists into single-item lists")
-    .action((file: string) => handlePrettier(file));
 
   return program;
 }
@@ -169,13 +163,6 @@ async function handlePrompt() {
     console.error(err instanceof Error ? err.message : err);
     process.exit(1);
   }
-}
-
-async function handlePrettier(file: string) {
-  const absFile = resolve(file);
-  const content = await Bun.file(absFile).text();
-  const result = prettify(content);
-  await Bun.write(absFile, result);
 }
 
 function openBrowser(url: string) {

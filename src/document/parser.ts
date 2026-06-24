@@ -3,7 +3,7 @@ import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkStringify from "remark-stringify";
-import { remarkComment } from "./remark-comment.ts";
+import { remarkComment, commentBlockquoteHandler } from "./remark-comment.ts";
 
 export const parser = unified()
   .use(remarkParse)
@@ -16,6 +16,7 @@ export const stringifier = unified()
   .use(remarkStringify, {
     bullet: "-",
     rule: "-",
+    handlers: { blockquote: commentBlockquoteHandler },
   })
   .use(remarkGfm)
   .use(remarkFrontmatter)

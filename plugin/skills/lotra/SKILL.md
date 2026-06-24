@@ -27,7 +27,6 @@ Commands:
   status                    show open files
   restart                   restart the daemon
   prompt                    print agent instructions to stdout
-  prettier <file>           split multi-item lists into single-item lists
 ```
 
 `handoff` accepts `--exclude-notes` to omit notes from output.
@@ -61,8 +60,9 @@ with `bun x @ryangowe/lotra handoff "<file>"`.
 
 You can get the user's feedback by reading the document directly.
 
-All comments the user leaves through lotra
-are written back directly below the commented block, using markdown callout syntax.
+All comments the user leaves through lotra are written back using markdown
+callout syntax: directly below the commented block, or nested inside the list
+item when the comment is on a list item.
 
 ### Comment tracking for persistent documents
 
@@ -79,13 +79,12 @@ to mark the comments as resolved.
 You can edit the markdown document itself,
 but never edit a comment callout directly.
 
-## Dump, prettify, and review
+## Dump and review
 
 When routing long output through lotra (not an existing project file):
 
 1. **Dump**: Write the markdown to the Scratchpad Directory. Never write temporary review files into the project directory.
-2. **Prettify**: Run `bun x @ryangowe/lotra prettier "<file>"` to split complex lists into single-item blocks.
-3. **Review**: Run `bun x @ryangowe/lotra review "<file>"` to open the file in the browser and wait for user comments.
+2. **Review**: Run `bun x @ryangowe/lotra review "<file>"` to open the file in the browser and wait for user comments.
 
 When reviewing an existing project file (a spec, a doc, etc.),
 skip the dump step and use the file in place.
