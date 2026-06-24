@@ -348,15 +348,32 @@ describe("formatCommentsForStdout", () => {
     const comments = extractComments(DOC_WITH_COMMENTS);
     const output = formatCommentsForStdout(comments);
     expect(output).toContain('<comment id="c1">');
-    expect(output).not.toContain('<comment id="c2">');
+    expect(output).not.toContain("c2");
   });
 
-  test("wraps content with newlines inside xml tags", () => {
+  test("every tag sits on its own line", () => {
+    const comments = extractComments(DOC_WITH_COMMENTS);
+    const output = formatCommentsForStdout(comments);
+    const lines = output.split("\n");
+    for (const tag of ["<cite>", "</cite>", "</comment>"]) {
+      const tagLines = lines.filter((l) => l.includes(tag));
+      for (const line of tagLines) {
+        expect(line.trim()).toBe(tag);
+      }
+    }
+    const commentOpenLines = lines.filter((l) => l.startsWith("<comment "));
+    for (const line of commentOpenLines) {
+      expect(line).toMatch(/^<comment .+>$/);
+    }
+  });
+
+  test("cite and comment body are between their tags", () => {
     const comments = extractComments(DOC_WITH_COMMENTS);
     const output = formatCommentsForStdout(comments);
     expect(output).toContain("<cite>\nFirst paragraph here.\n</cite>");
-    expect(output).toContain('<comment id="c1">\n');
-    expect(output).toContain("\n</comment>");
+    expect(output).toContain(
+      '<comment id="c1">\nThis data is **wrong**.\n</comment>',
+    );
   });
 
   test("truncates multiline cite exceeding threshold to first and last line", () => {
@@ -383,6 +400,15 @@ describe("formatCommentsForStdout", () => {
     const output = formatCommentsForStdout(comments, 50);
     const cite = output.match(/<cite>\n(.*?)\n<\/cite>/s)?.[1] ?? "";
     expect(cite).toBe(longPara);
+  });
+
+  test("empty cite still has tag on own line", () => {
+    const doc = `> [!comment] id="c1" status="requested"
+> Orphan comment.
+`;
+    const comments = extractComments(doc);
+    const output = formatCommentsForStdout(comments);
+    expect(output).toContain("<cite>\n</cite>");
   });
 
   test("returns empty string when no requested comments", () => {

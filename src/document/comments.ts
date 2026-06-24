@@ -181,8 +181,15 @@ export function formatCommentsForStdout(
       if (cite.length > maxCiteLength && lines.length > 2) {
         cite = `${lines[0]}\n...\n${lines[lines.length - 1]}`;
       }
-      const citeInner = cite ? `\n${cite}\n` : "";
-      return `<cite>${citeInner}</cite>\n\n<comment id="${c.id}">\n${c.body}\n</comment>`;
+      const citeParts = ["<cite>"];
+      if (cite) citeParts.push(cite);
+      citeParts.push("</cite>");
+
+      const commentParts = [`<comment id="${c.id}">`];
+      if (c.body) commentParts.push(c.body);
+      commentParts.push("</comment>");
+
+      return [...citeParts, "", ...commentParts].join("\n");
     })
     .join("\n\n");
 }
