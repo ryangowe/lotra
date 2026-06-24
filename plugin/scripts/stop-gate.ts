@@ -10,12 +10,14 @@ const input = await readStopInput();
 if (input.lineCount < GATE_LINES) process.exit(0);
 
 const file = await dumpForReview(input);
+const pkg = await lotraPackage();
 
-// Pin the CLI to this plugin's version so the hook and the published CLI never drift.
-// `bun x` fetches it on demand; a missing/offline/unpublished version yields empty
-// stdout and degrades to a no-op. lotra review opens the browser and blocks until the
-// human submits comments.
-const proc = Bun.spawn(["bun", "x", await lotraPackage(), "review", file], {
+await Bun.spawn(["bun", "x", pkg, "prettier", file], {
+  stdout: "ignore",
+  stderr: "ignore",
+}).exited;
+
+const proc = Bun.spawn(["bun", "x", pkg, "review", file], {
   stdout: "pipe",
   stderr: "ignore",
 });

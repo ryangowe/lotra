@@ -27,6 +27,7 @@ Commands:
   status                   show open files
   restart                  restart the daemon
   prompt                   print agent instructions to stdout
+  prettier <file>          split multi-item lists into single-item lists
 ```
 
 ## Workflow
