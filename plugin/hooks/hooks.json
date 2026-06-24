@@ -1,14 +1,20 @@
 {
   "description": "Route long agent replies through lotra for human review",
   "hooks": {
-    "Stop": [
+    "SessionStart": [
       {
         "hooks": [
           {
             "type": "command",
             "command": "bun",
-            "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/stop-remind.ts"]
-          },
+            "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/session-start-inject.ts"]
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
           {
             "type": "command",
             "command": "bun",

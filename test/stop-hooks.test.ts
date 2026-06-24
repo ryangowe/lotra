@@ -4,13 +4,11 @@ import { tmpdir } from "node:os";
 import { readdir } from "node:fs/promises";
 import { countLines, parseStopInput } from "../plugin/scripts/stop-input.ts";
 import { lotraPackage } from "../plugin/scripts/lotra-cli.ts";
-import { REMIND_LINES, GATE_LINES } from "../plugin/scripts/config.ts";
+import { GATE_LINES } from "../plugin/scripts/config.ts";
 
 const SCRIPTS = join(import.meta.dir, "../plugin/scripts");
 
 // Derived from the single-source thresholds so tests track config changes.
-const IN_REMIND_BAND = Math.floor((REMIND_LINES + GATE_LINES) / 2);
-const BELOW_REMIND = Math.max(1, REMIND_LINES - 5);
 const AT_GATE = GATE_LINES + 5;
 const BELOW_GATE = GATE_LINES - 5;
 
@@ -79,39 +77,6 @@ describe("lotraPackage", () => {
   });
   test("falls back to the unversioned package when no manifest", async () => {
     expect(await lotraPackage("/no/such/dir")).toBe("@ryangowe/lotra");
-  });
-});
-
-describe("stop-remind hook", () => {
-  test("reminds inside the remind band", async () => {
-    const r = await runHook("stop-remind.ts", {
-      last_assistant_message: lines(IN_REMIND_BAND),
-    });
-    expect(r.exitCode).toBe(0);
-    expect(r.stdout).toContain("additionalContext");
-    expect(r.stdout).toContain(`${IN_REMIND_BAND} lines`);
-  });
-  test("silent below the remind threshold", async () => {
-    const r = await runHook("stop-remind.ts", {
-      last_assistant_message: lines(BELOW_REMIND),
-    });
-    expect(r.exitCode).toBe(0);
-    expect(r.stdout.trim()).toBe("");
-  });
-  test("silent at or above the gate band", async () => {
-    const r = await runHook("stop-remind.ts", {
-      last_assistant_message: lines(AT_GATE),
-    });
-    expect(r.exitCode).toBe(0);
-    expect(r.stdout.trim()).toBe("");
-  });
-  test("silent when stop_hook_active", async () => {
-    const r = await runHook("stop-remind.ts", {
-      last_assistant_message: lines(IN_REMIND_BAND),
-      stop_hook_active: true,
-    });
-    expect(r.exitCode).toBe(0);
-    expect(r.stdout.trim()).toBe("");
   });
 });
 
