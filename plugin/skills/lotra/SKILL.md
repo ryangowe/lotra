@@ -53,13 +53,19 @@ You can get the user's feedback by reading the document directly.
 All comments the user leaves through lotra
 are written back directly below the commented block, using markdown callout syntax.
 
-### Mark resolved
+### Comment tracking for persistent documents
+
+For one-off long text review (dumped agent output, temporary files),
+comment tracking is unnecessary — read the feedback once and move on.
+
+For persistent documents (specs, design docs, project files) that go through
+multiple rounds of review, track comments with resolve:
 
 After you have addressed the concerns based on the user's comments,
 use `bun x @ryangowe/lotra resolve <file> <id...>`
 to mark the comments as resolved.
 
-You can of course still edit the markdown document itself,
+You can edit the markdown document itself,
 but never edit a comment callout directly.
 
 ## Dump, prettify, and review
