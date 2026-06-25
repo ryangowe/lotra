@@ -6,7 +6,7 @@ import { mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { countLines } from "./stop-input.ts";
-import { lotraPackage } from "./lotra-cli.ts";
+import { lotraReviewArgs } from "./lotra-cli.ts";
 import { GATE_LINES } from "./config.ts";
 
 const data = JSON.parse((await Bun.stdin.text()) || "{}");
@@ -23,8 +23,7 @@ await mkdir(dir, { recursive: true });
 const file = join(dir, `${data.session_id ?? "session"}-${Date.now()}.md`);
 await Bun.write(file, plan);
 
-const pkg = await lotraPackage();
-const proc = Bun.spawn(["bun", "x", pkg, "review", file], {
+const proc = Bun.spawn(await lotraReviewArgs(file), {
   stdout: "pipe",
   stderr: "ignore",
 });

@@ -1,6 +1,7 @@
 import { test, expect, describe } from "bun:test";
 import { join } from "node:path";
 import { GATE_LINES } from "../plugin/scripts/config.ts";
+import { hookEnv } from "./helpers.ts";
 
 const SCRIPTS = join(import.meta.dir, "../plugin/scripts");
 
@@ -10,6 +11,7 @@ async function runHook(
 ): Promise<{ stdout: string; exitCode: number }> {
   const proc = Bun.spawn(["bun", join(SCRIPTS, script)], {
     stdin: new TextEncoder().encode(JSON.stringify(input)),
+    env: hookEnv(),
     stdout: "pipe",
     stderr: "ignore",
   });

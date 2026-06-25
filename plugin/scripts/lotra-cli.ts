@@ -20,3 +20,12 @@ export async function lotraPackage(root = pluginRoot()): Promise<string> {
     return "@ryangowe/lotra";
   }
 }
+
+// Argv to run a lotra review. Defaults to the published package pinned to the bundled
+// manifest version. LOTRA_DEV_ROOT overrides it with a checkout's `index.ts`, so the
+// plugin can be exercised against unpublished working-tree source.
+export async function lotraReviewArgs(file: string): Promise<string[]> {
+  const devRoot = process.env.LOTRA_DEV_ROOT;
+  if (devRoot) return ["bun", join(devRoot, "index.ts"), "review", file];
+  return ["bun", "x", await lotraPackage(), "review", file];
+}

@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { readdir } from "node:fs/promises";
 import { countLines, parseStopInput } from "../plugin/scripts/stop-input.ts";
-import { lotraPackage } from "../plugin/scripts/lotra-cli.ts";
+import { lotraPackage, lotraReviewArgs } from "../plugin/scripts/lotra-cli.ts";
 import { GATE_LINES } from "../plugin/scripts/config.ts";
 
 const SCRIPTS = join(import.meta.dir, "../plugin/scripts");
@@ -77,6 +77,28 @@ describe("lotraPackage", () => {
   });
   test("falls back to the unversioned package when no manifest", async () => {
     expect(await lotraPackage("/no/such/dir")).toBe("@ryangowe/lotra");
+  });
+});
+
+describe("lotraReviewArgs", () => {
+  test("defaults to bun x of the pinned package", async () => {
+    delete process.env.LOTRA_DEV_ROOT;
+    const args = await lotraReviewArgs("/tmp/x.md");
+    expect(args.slice(0, 2)).toEqual(["bun", "x"]);
+    expect(args.slice(-2)).toEqual(["review", "/tmp/x.md"]);
+  });
+  test("LOTRA_DEV_ROOT runs the checkout's index.ts", async () => {
+    process.env.LOTRA_DEV_ROOT = "/repo";
+    try {
+      expect(await lotraReviewArgs("/tmp/x.md")).toEqual([
+        "bun",
+        "/repo/index.ts",
+        "review",
+        "/tmp/x.md",
+      ]);
+    } finally {
+      delete process.env.LOTRA_DEV_ROOT;
+    }
   });
 });
 

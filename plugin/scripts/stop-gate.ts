@@ -2,7 +2,7 @@
 // Stop hook (asyncRewake): on a long reply, dump it outside the project and route
 // human review back to the agent. Runs in the background so the turn is not held.
 import { readStopInput, dumpForReview } from "./stop-input.ts";
-import { lotraPackage } from "./lotra-cli.ts";
+import { lotraReviewArgs } from "./lotra-cli.ts";
 import { GATE_LINES } from "./config.ts";
 
 const input = await readStopInput();
@@ -10,9 +10,8 @@ const input = await readStopInput();
 if (input.lineCount < GATE_LINES) process.exit(0);
 
 const file = await dumpForReview(input);
-const pkg = await lotraPackage();
 
-const proc = Bun.spawn(["bun", "x", pkg, "review", file], {
+const proc = Bun.spawn(await lotraReviewArgs(file), {
   stdout: "pipe",
   stderr: "ignore",
 });

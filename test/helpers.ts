@@ -72,3 +72,15 @@ export function get(
     : "";
   return routes[path]!.GET!(new Request(`http://t${path}${qs}`));
 }
+
+// Env for spawning hook scripts so their lotra review runs the working-tree CLI
+// (LOTRA_DEV_ROOT) instead of `bun x` the published package.
+export function hookEnv(
+  extra: Record<string, string> = {},
+): Record<string, string> {
+  return {
+    ...process.env,
+    LOTRA_DEV_ROOT: join(import.meta.dir, ".."),
+    ...extra,
+  };
+}
