@@ -1,8 +1,9 @@
 import { test, expect, describe } from "bun:test";
 import { getDocumentData } from "./render.ts";
 import { insertComment } from "./comments.ts";
+import type { NodeBlock } from "../shared/types.ts";
 
-describe("list items as blocks", () => {
+describe("list as a cohesive block", () => {
   const listDoc = [
     "Intro.",
     "",
@@ -13,29 +14,33 @@ describe("list items as blocks", () => {
     "Outro.",
   ].join("\n");
 
-  test("expands each list item into its own block, preserving the ordinal", () => {
+  test("groups a list into one block whose items carry their own anchors", () => {
     const { blocks } = getDocumentData("f.md", listDoc);
-    expect(blocks).toHaveLength(5); // intro, three items, outro
-    expect(blocks[1]?.html).toContain("<li>First</li>");
-    expect(blocks[2]?.html).toContain('start="2"');
-    expect(blocks[3]?.html).toContain('start="3"');
+    expect(blocks).toHaveLength(3); // intro, the list, outro
+    const list = blocks[1];
+    expect(list?.kind).toBe("list");
+    if (list?.kind !== "list") throw new Error("expected a list block");
+    expect(list.ordered).toBe(true);
+    expect(list.items.map((it) => it.index)).toEqual([1, 2, 3]);
+    expect(list.items[0]?.html).toContain("First");
+    expect(list.items[1]?.html).toContain("Second");
   });
 
-  test("anchors a comment nested in a list item to that item's block", () => {
+  test("anchors a comment nested in a list item to that item's index", () => {
     const withComment = insertComment(listDoc, 2, "c1", "requested", "fix");
     const { blocks, comments } = getDocumentData("f.md", withComment);
-    expect(blocks).toHaveLength(5);
+    expect(blocks).toHaveLength(3);
     expect(comments).toHaveLength(1);
     expect(comments[0]?.blockIndex).toBe(2);
   });
 
-  // A comment is additive: adding one must never change the non-comment block
-  // count, at any anchor.
-  test("adding a comment never changes the non-comment block count", () => {
-    const before = getDocumentData("f.md", listDoc).blocks.length;
-    for (let i = 0; i < before; i++) {
+  // A comment is additive: adding one must never change the block count, at any
+  // anchor (intro=0, items=1/2/3, outro=4).
+  test("adding a comment never changes the block count", () => {
+    expect(getDocumentData("f.md", listDoc).blocks).toHaveLength(3);
+    for (let i = 0; i <= 4; i++) {
       const withComment = insertComment(listDoc, i, "c", "requested", "x");
-      expect(getDocumentData("f.md", withComment).blocks.length).toBe(before);
+      expect(getDocumentData("f.md", withComment).blocks).toHaveLength(3);
     }
   });
 });
@@ -63,12 +68,15 @@ describe("getDocumentData", () => {
   });
 
   test("returns blocks with sequential indices, html, and heading metadata", () => {
-    const { blocks } = getDocumentData("file.md", md);
-    expect(blocks.map((b) => b.index)).toEqual([0, 1, 2]);
-    expect(blocks[0]?.html).toContain("My Title");
-    expect(blocks[0]?.heading).toEqual({ depth: 1, text: "My Title" });
-    expect(blocks[1]?.heading).toBeNull();
-    expect(blocks[2]?.heading).toEqual({ depth: 2, text: "Section" });
+    const nodes = getDocumentData("file.md", md).blocks.filter(
+      (b): b is NodeBlock => b.kind === "node",
+    );
+    expect(nodes).toHaveLength(3);
+    expect(nodes.map((b) => b.index)).toEqual([0, 1, 2]);
+    expect(nodes[0]?.html).toContain("My Title");
+    expect(nodes[0]?.heading).toEqual({ depth: 1, text: "My Title" });
+    expect(nodes[1]?.heading).toBeNull();
+    expect(nodes[2]?.heading).toEqual({ depth: 2, text: "Section" });
   });
 
   test("anchors a comment to its preceding block with md + html bodies", () => {
@@ -107,7 +115,7 @@ describe("getDocumentData", () => {
     ].join("\n");
     const { blocks, title } = getDocumentData("file.md", withFm);
     expect(title).toBe("Hello");
-    const html = blocks.map((b) => b.html).join("");
+    const html = blocks.map((b) => (b.kind === "node" ? b.html : "")).join("");
     expect(html).not.toContain("<hr");
     expect(html).not.toContain("title:");
     expect(html).not.toContain("date:");
@@ -119,7 +127,7 @@ describe("getDocumentData", () => {
       "file.md",
       "| A | B |\n|---|---|\n| 1 | 2 |\n\n~~gone~~",
     );
-    const html = blocks.map((b) => b.html).join("");
+    const html = blocks.map((b) => (b.kind === "node" ? b.html : "")).join("");
     expect(html).toContain("<table>");
     expect(html).toContain("<th>A</th>");
     expect(html).toContain("<del>gone</del>");

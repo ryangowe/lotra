@@ -7,7 +7,7 @@ import {
   Sun,
   Moon,
 } from "lucide-react";
-import type { BlockData, CommentData } from "../shared/types.ts";
+import type { BlockData, NodeBlock, CommentData } from "../shared/types.ts";
 import { snippet } from "./utils.ts";
 import { StatusDot } from "./StatusDot.tsx";
 import logo from "./favicon.svg";
@@ -19,11 +19,12 @@ interface TocEntry {
   children: TocEntry[];
 }
 
-type HeadingBlock = BlockData & { heading: { depth: number; text: string } };
+type HeadingBlock = NodeBlock & { heading: { depth: number; text: string } };
 
 function buildTocTree(blocks: BlockData[]): TocEntry[] {
   const headings = blocks.filter(
-    (b): b is HeadingBlock => !!b.heading && b.heading.depth >= 2,
+    (b): b is HeadingBlock =>
+      b.kind === "node" && !!b.heading && b.heading.depth >= 2,
   );
   const levels = [...new Set(headings.map((b) => b.heading.depth))].sort(
     (a, b) => a - b,

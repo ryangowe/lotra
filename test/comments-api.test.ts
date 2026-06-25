@@ -98,8 +98,10 @@ test("/api/document returns h1 title, indexed blocks, and anchored comments", as
   const data = await res.json();
 
   expect(data.title).toBe("关于猫的报告");
-  // 0 h1, 1 para, 2 h2, 3-4 the two list items, 5 table, 6 code, 7 para.
-  expect(data.blocks.length).toBe(8);
+  // Blocks: h1, para, h2, the list (one block holding items 3-4), table, code,
+  // para — 7 blocks. Anchor indices still run 0..7; the list collapses 3-4 into
+  // one entry, so comment blockIndex 1 keeps pointing at the first paragraph.
+  expect(data.blocks.length).toBe(7);
   expect(data.blocks[0].heading).toEqual({ depth: 1, text: "关于猫的报告" });
   expect(data.comments[0].blockIndex).toBe(1);
 });

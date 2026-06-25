@@ -1,4 +1,4 @@
-import type { CommentStatus } from "../shared/types.ts";
+import type { CommentData, CommentStatus } from "../shared/types.ts";
 
 export function stripMd(s: string): string {
   return (s || "")
@@ -25,3 +25,26 @@ export const STATUS_DOT: Record<CommentStatus, string> = {
   note: "bg-note",
   resolved: "bg-done",
 };
+
+// background tint of a commented block/item, by its most urgent comment status
+export const STATUS_TINT: Record<CommentStatus, string> = {
+  requested: "bg-hi-req",
+  note: "bg-hi-note",
+  resolved: "bg-hi-done",
+};
+
+const STATUS_RANK: Record<CommentStatus, number> = {
+  requested: 3,
+  note: 2,
+  resolved: 1,
+};
+
+// The most urgent status among a block's comments: requested > note > resolved.
+export function topCommentStatus(
+  comments: CommentData[],
+): CommentStatus | null {
+  let top: CommentStatus | null = null;
+  for (const c of comments)
+    if (!top || STATUS_RANK[c.status] > STATUS_RANK[top]) top = c.status;
+  return top;
+}

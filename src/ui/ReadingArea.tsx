@@ -1,22 +1,9 @@
 import { useRef, useEffect, useCallback } from "react";
-import { Plus } from "lucide-react";
 import type { BlockData, CommentData, CommentStatus } from "../shared/types.ts";
 import { CommentCard } from "./CommentCard.tsx";
-
-const TINT: Record<string, string> = {
-  requested: "bg-hi-req",
-  note: "bg-hi-note",
-  resolved: "bg-hi-done",
-};
-
-// urgency order: requested > note > resolved
-function blockStatus(comments: CommentData[]): string {
-  const rank: Record<string, number> = { requested: 3, note: 2, resolved: 1 };
-  let top = "";
-  for (const c of comments)
-    if ((rank[c.status] ?? 0) > (rank[top] ?? 0)) top = c.status;
-  return top;
-}
+import { AddCommentButton } from "./AddCommentButton.tsx";
+import { ListBlockView } from "./ListBlockView.tsx";
+import { STATUS_TINT, topCommentStatus } from "./utils.ts";
 
 export function ReadingArea({
   blocks,
@@ -92,8 +79,22 @@ export function ReadingArea({
     <main ref={mainRef} className="flex-1 overflow-y-auto xl:pr-(--sidebar-w)">
       <div className="mx-auto max-w-[752px] px-[clamp(24px,4vw,52px)] pb-[200px] pt-[clamp(40px,4.5vw,76px)]">
         {blocks.map((block) => {
+          if (block.kind === "list")
+            return (
+              <ListBlockView
+                key={`l${block.items[0]?.index}`}
+                block={block}
+                comments={comments}
+                focusEditId={focusEditId}
+                onPlusClick={onPlusClick}
+                onStatusChange={onStatusChange}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onCancelCompose={onCancelCompose}
+              />
+            );
           const bc = commentsFor(block.index);
-          const status = blockStatus(bc);
+          const status = topCommentStatus(bc);
           return (
             <div
               key={block.index}
@@ -101,18 +102,15 @@ export function ReadingArea({
             >
               <div className="relative">
                 <div
-                  className={`md prose prose-lg max-w-none rounded-[10px] px-2.5 py-1.5 font-serif transition-colors ${status ? TINT[status] : "group-hover:bg-hl"}`}
+                  className={`md prose prose-lg max-w-none rounded-[10px] px-2.5 py-1.5 font-serif transition-colors ${status ? STATUS_TINT[status] : "group-hover:bg-hl"}`}
                   data-block-index={block.index}
                   data-heading={block.heading ? block.heading.depth : undefined}
                   dangerouslySetInnerHTML={{ __html: block.html }}
                 />
-                <button
+                <AddCommentButton
                   onClick={() => onPlusClick(block.index)}
-                  title="Add comment"
-                  className="absolute right-[-38px] top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-full border border-line bg-paper text-accent opacity-0 shadow-[0_2px_6px_-1px_rgba(60,50,40,0.16)] transition hover:border-accent hover:bg-accent-soft group-hover:opacity-100"
-                >
-                  <Plus size={15} />
-                </button>
+                  className="absolute right-[-38px] top-1/2 -translate-y-1/2 group-hover:opacity-100"
+                />
               </div>
               {bc.length > 0 && (
                 <div className="ml-auto flex w-[min(560px,84%)] flex-col gap-2 pr-2.5 pt-2">

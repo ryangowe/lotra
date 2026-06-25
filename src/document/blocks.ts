@@ -76,6 +76,12 @@ function spliceOut<T>(arr: T[], node: T): void {
   if (i !== -1) arr.splice(i, 1);
 }
 
+// A list item's renderable children, with its comment callouts removed. Keeps
+// the "what counts as content vs. comment" rule in one place.
+export function itemContent(item: ListItem): ListItem["children"] {
+  return item.children.filter((c) => !isCommentNode(c));
+}
+
 // The node to render for a block, with its comment callouts removed. A list item
 // is wrapped back into a one-item list so its bullet (and ordinal, for ordered
 // lists) survives even though only this item is shown.
@@ -83,7 +89,7 @@ export function blockContentNode(entry: BlockEntry): RootContent {
   const loc = entry.location;
   if (loc.kind === "top") return loc.node;
 
-  const content = loc.item.children.filter((c) => !isCommentNode(c));
+  const content = itemContent(loc.item);
   const start = loc.list.ordered ? (loc.list.start ?? 1) + loc.itemIndex : null;
   return {
     type: "list",
