@@ -7,12 +7,12 @@ repos:
         language: system
         pass_filenames: false
         files: ^(package\.json|plugin/\.claude-plugin/plugin\.json)$
-      - id: sync-skill-cli
-        name: sync-skill-cli
-        entry: bun scripts/sync-skill-cli.ts
+      - id: sync-cli-docs
+        name: sync-cli-docs
+        entry: bun scripts/sync-cli-docs.ts
         language: system
         pass_filenames: false
-        files: ^(src/cli/cli\.ts|plugin/skills/lotra/SKILL\.md)$
+        files: ^(src/cli/cli\.ts|plugin/skills/lotra/SKILL\.md|README\.md)$
       - id: format
         name: format
         entry: bun x prettier --write --ignore-unknown
